@@ -1,0 +1,19 @@
+<% content_for :title, "Importer un CSV" %>
+
+<h1 class="text-2xl font-bold text-slate-800 mb-6">Importer une liste de prix (CSV)</h1>
+
+<div class="bg-white border border-slate-200 rounded shadow-sm p-6 max-w-xl mb-6">
+  <p class="text-sm text-slate-600 mb-4">
+    Le fichier doit contenir les colonnes suivantes (en-tête) :
+    <code class="bg-slate-100 px-1 rounded">nom, categorie, unite, prix_reference, notes</code>.
+    Un article existant (même nom) sera mis à jour ; sinon il sera créé.
+  </p>
+
+  <%= form_with url: import_upload_price_items_path, method: :post, multipart: true, class: "space-y-4" do %>
+    <input type="file" name="file" accept=".csv" required class="block w-full text-sm text-slate-700">
+    <div class="flex gap-3">
+      <%= submit_tag "Importer", class: "bg-slate-800 text-white px-4 py-2 rounded hover:bg-slate-700 cursor-pointer" %>
+      <%= link_to "Annuler", price_items_path, class: "px-4 py-2 text-slate-600 hover:underline" %>
+    </div>
+  <% end %>
+</div>

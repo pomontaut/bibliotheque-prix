@@ -1,0 +1,51 @@
+<% content_for :title, "Bibliothèque de prix" %>
+
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-bold text-slate-800">Bibliothèque de prix</h1>
+  <div class="flex gap-2">
+    <%= link_to "Importer CSV", import_price_items_path, class: "bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded hover:bg-slate-50" %>
+    <%= link_to "Exporter CSV", export_price_items_path, class: "bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded hover:bg-slate-50" %>
+    <%= link_to "Nouvel article", new_price_item_path, class: "bg-slate-800 text-white px-4 py-2 rounded hover:bg-slate-700" %>
+  </div>
+</div>
+
+<%= form_with url: price_items_path, method: :get, class: "flex gap-3 mb-6" do %>
+  <%= text_field_tag :q, params[:q], placeholder: "Rechercher un article, une catégorie...", class: "flex-1 border border-slate-300 rounded px-3 py-2" %>
+  <%= select_tag :category, options_for_select(@categories, params[:category]), include_blank: "Toutes les catégories", class: "border border-slate-300 rounded px-3 py-2" %>
+  <%= submit_tag "Filtrer", class: "bg-slate-200 text-slate-800 px-4 py-2 rounded hover:bg-slate-300" %>
+<% end %>
+
+<div class="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
+  <table class="w-full text-left">
+    <thead class="bg-slate-100 text-slate-600 text-sm uppercase">
+      <tr>
+        <th class="px-4 py-3">Nom</th>
+        <th class="px-4 py-3">Catégorie</th>
+        <th class="px-4 py-3">Unité</th>
+        <th class="px-4 py-3 text-right">Prix de référence</th>
+        <th class="px-4 py-3">Mis à jour le</th>
+        <th class="px-4 py-3"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      <% @price_items.each do |item| %>
+        <tr class="hover:bg-slate-50">
+          <td class="px-4 py-3 font-medium"><%= link_to item.name, item, class: "text-slate-800 hover:underline" %></td>
+          <td class="px-4 py-3 text-slate-600"><%= item.category %></td>
+          <td class="px-4 py-3 text-slate-600"><%= item.unit %></td>
+          <td class="px-4 py-3 text-right font-mono"><%= number_to_currency(item.reference_price, unit: "CHF ", format: "%u %n") %></td>
+          <td class="px-4 py-3 text-slate-500 text-sm"><%= item.updated_at.strftime("%d.%m.%Y") %></td>
+          <td class="px-4 py-3 text-right">
+            <%= link_to "Modifier", edit_price_item_path(item), class: "text-sm text-slate-600 hover:underline mr-3" %>
+            <%= link_to "Supprimer", item, data: { turbo_method: :delete, turbo_confirm: "Supprimer #{item.name} ?" }, class: "text-sm text-red-600 hover:underline" %>
+          </td>
+        </tr>
+      <% end %>
+      <% if @price_items.empty? %>
+        <tr>
+          <td colspan="6" class="px-4 py-8 text-center text-slate-400">Aucun article trouvé.</td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

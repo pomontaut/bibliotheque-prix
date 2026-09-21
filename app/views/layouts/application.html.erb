@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= content_for(:title) || "Bibliothèque de prix" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Bibliothèque de prix">
+    <meta name="mobile-web-app-capable" content="yes">
+    <%= csrf_meta_tags %>
+
+    <%# Includes all stylesheet files in app/assets/stylesheets %>
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+
+  <body class="bg-gray-50">
+    <header class="bg-slate-800 text-white">
+      <div class="container mx-auto px-5 py-4 flex items-center justify-between">
+        <%= link_to "Bibliothèque de prix", root_path, class: "text-lg font-semibold" %>
+      </div>
+    </header>
+
+    <% if notice %>
+      <div class="container mx-auto px-5 mt-4">
+        <div class="bg-green-100 text-green-800 border border-green-300 rounded px-4 py-2"><%= notice %></div>
+      </div>
+    <% end %>
+    <% if alert %>
+      <div class="container mx-auto px-5 mt-4">
+        <div class="bg-red-100 text-red-800 border border-red-300 rounded px-4 py-2"><%= alert %></div>
+      </div>
+    <% end %>
+
+    <main class="container mx-auto px-5 py-6">
+      <%= yield %>
+    </main>
+  </body>
+</html>
