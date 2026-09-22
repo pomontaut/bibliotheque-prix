@@ -11,12 +11,18 @@ class Invoice < ApplicationRecord
     return unless file.attached?
 
     text = InvoiceParser.extract_text(file)
-    update!(raw_text: text)
+    header = InvoiceParser.extract_header(text)
+    update!(
+      raw_text: text,
+      invoice_number: invoice_number.presence || header[:invoice_number],
+      invoice_date: invoice_date.presence || header[:invoice_date]
+    )
 
     invoice_lines.destroy_all
     InvoiceParser.extract_lines(text).each do |parsed|
-      match = PriceItemMatcher.best_match(parsed[:description])
+      match = find_match(parsed[:article_number], parsed[:description])
       invoice_lines.create!(
+        article_number: parsed[:article_number],
         description: parsed[:description],
         quantity: parsed[:quantity],
         unit_price: parsed[:unit_price],
@@ -25,6 +31,11 @@ class Invoice < ApplicationRecord
         matched_automatically: match.present?
       )
     end
+  end
+
+  def find_match(article_number, description)
+    mapping = supplier.supplier_article_mappings.find_by(article_number: article_number) if article_number.present?
+    mapping&.price_item || PriceItemMatcher.best_match(description)
   end
 
   # Updates each matched article's reference price to what this invoice actually

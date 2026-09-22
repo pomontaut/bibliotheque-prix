@@ -41,6 +41,7 @@
   <table class="w-full text-left text-sm">
     <thead class="bg-slate-100 text-slate-600 uppercase text-xs">
       <tr>
+        <th class="px-4 py-3">N° article</th>
         <th class="px-4 py-3">Description (facture)</th>
         <th class="px-4 py-3">Article rapproché</th>
         <th class="px-4 py-3 text-right">Qté</th>
@@ -53,6 +54,7 @@
     <tbody class="divide-y divide-slate-100">
       <% @invoice_lines.each do |line| %>
         <tr class="<%= 'bg-red-50' if line.anomalous? %>">
+          <td class="px-4 py-3 font-mono text-xs text-slate-500"><%= line.article_number %></td>
           <td class="px-4 py-3 max-w-xs">
             <%= line.description %>
             <% if line.matched_automatically %>
@@ -80,7 +82,7 @@
         </tr>
       <% end %>
       <% if @invoice_lines.empty? %>
-        <tr><td colspan="7" class="px-4 py-8 text-center text-slate-400">Aucune ligne détectée dans ce PDF (texte non extractible ou format non reconnu).</td></tr>
+        <tr><td colspan="8" class="px-4 py-8 text-center text-slate-400">Aucune ligne détectée dans ce PDF (texte non extractible ou format non reconnu).</td></tr>
       <% end %>
     </tbody>
   </table>

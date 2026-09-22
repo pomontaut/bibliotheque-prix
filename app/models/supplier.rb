@@ -1,6 +1,7 @@
 class Supplier < ApplicationRecord
   has_many :price_conditions, dependent: :destroy
   has_many :invoices, dependent: :destroy
+  has_many :supplier_article_mappings, dependent: :destroy
 
   validates :name, presence: true, uniqueness: true
 

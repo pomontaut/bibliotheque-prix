@@ -31,15 +31,34 @@ communique en français.
 
 - `app/services/invoice_parser.rb` : extraction de texte via `pdf-reader`
   (uniquement le texte embarqué dans le PDF, **pas d'OCR** — un PDF scanné en
-  image donnera un texte vide) puis heuristique regex par ligne
-  (`description  quantité  prix_unitaire  total`, formats numériques suisses
-  avec `'` comme séparateur de milliers). C'est un best-effort : toujours
-  vérifié par un humain sur l'écran de contrôle avant intégration.
+  image donnera un texte vide). `extract_header` récupère numéro/date de
+  facture (regex sur "Numéro de facture" / "Date de facture") et préremplit
+  `Invoice#invoice_number`/`invoice_date` s'ils sont vides à l'upload.
+  `extract_lines` détecte les lignes d'articles au format observé chez HGC
+  Handel AG (`Pos  N°Article  Désignation  Quantité UQ  Prix  UP  Montant`,
+  validé sur ~100 vraies factures) : **le scan part de la fin de chaque
+  ligne**, pas du début — les désignations contiennent souvent leurs propres
+  nombres ("38 pièces", "S 1122 HF", "300 GE") qu'il ne faut pas confondre
+  avec les vraies colonnes quantité/prix/montant. `UNIT_FRAGMENT` liste les
+  seules unités reconnues (PCE, KG, M2, M3, L, SAC, PAQ, HST...) pour borner
+  correctement où s'arrête la désignation et où commencent les colonnes
+  numériques ; un code produit du genre "S 1122 HF" serait sinon pris pour
+  une unité de mesure. Limite connue : les documents "Récapitulatif" (cession
+  de créance) n'ont pas de tableau d'articles — 0 ligne détectée est normal
+  pour ce type, pas un bug. C'est un best-effort : toujours vérifié par un
+  humain sur l'écran de contrôle avant intégration.
 - `app/services/price_item_matcher.rb` : rapprochement par recouvrement de
   mots (Jaccard) après translittération (`I18n.transliterate`) pour ignorer
   les accents — sans ce fix, "Beton" (facture, sans accent) ne matchait pas
   "Béton" (bibliothèque). Seuil `MIN_SCORE = 0.34`, ajustable si trop/pas
   assez de faux positifs en pratique.
+- `SupplierArticleMapping` (`supplier_id + article_number` unique) :
+  mémoire d'apprentissage. Dès qu'un humain confirme/corrige le rapprochement
+  d'une ligne ayant un `article_number` (écran de contrôle →
+  `InvoiceLinesController#update`), le couple fournisseur+n°article est
+  retenu ; toute future facture du même fournisseur avec ce même n°article
+  est alors rapprochée avec certitude (`Invoice#find_match`), sans repasser
+  par le matching flou. L'agent s'améliore donc facture après facture.
 - Le ratio (`InvoiceLine#ratio`) = prix facturé / prix de référence effectif
   (condition négociée active sinon `reference_price`). `anomalous?` flague
   un écart de plus de 10 % dans un sens ou l'autre (affiché en rouge).

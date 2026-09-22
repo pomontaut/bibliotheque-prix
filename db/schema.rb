@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_22_141155) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_22_144532) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -40,6 +40,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_141155) do
   end
 
   create_table "invoice_lines", force: :cascade do |t|
+    t.string "article_number"
     t.datetime "created_at", null: false
     t.string "description", null: false
     t.integer "invoice_id", null: false
@@ -101,6 +102,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_141155) do
     t.index ["name"], name: "index_price_items_on_name"
   end
 
+  create_table "supplier_article_mappings", force: :cascade do |t|
+    t.string "article_number", null: false
+    t.datetime "created_at", null: false
+    t.integer "price_item_id", null: false
+    t.integer "supplier_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["price_item_id"], name: "index_supplier_article_mappings_on_price_item_id"
+    t.index ["supplier_id", "article_number"], name: "idx_on_supplier_id_article_number_c30bdd394e", unique: true
+    t.index ["supplier_id"], name: "index_supplier_article_mappings_on_supplier_id"
+  end
+
   create_table "suppliers", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "name"
@@ -117,4 +129,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_141155) do
   add_foreign_key "price_conditions", "price_items"
   add_foreign_key "price_conditions", "suppliers"
   add_foreign_key "price_item_versions", "price_items"
+  add_foreign_key "supplier_article_mappings", "price_items"
+  add_foreign_key "supplier_article_mappings", "suppliers"
 end
