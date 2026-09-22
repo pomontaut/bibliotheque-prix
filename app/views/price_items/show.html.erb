@@ -43,3 +43,32 @@
     </tbody>
   </table>
 </div>
+
+<h2 class="text-lg font-semibold text-slate-800 mb-3 mt-8">Factures rapprochées (contrôle des ratios)</h2>
+<div class="bg-white border border-slate-200 rounded shadow-sm overflow-hidden max-w-2xl">
+  <table class="w-full text-left text-sm">
+    <thead class="bg-slate-100 text-slate-600 uppercase text-xs">
+      <tr>
+        <th class="px-4 py-2">Fournisseur</th>
+        <th class="px-4 py-2">Description facture</th>
+        <th class="px-4 py-2 text-right">Prix facturé</th>
+        <th class="px-4 py-2 text-right">Ratio</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      <% @invoice_lines.each do |line| %>
+        <tr class="<%= 'bg-red-50' if line.anomalous? %>">
+          <td class="px-4 py-2"><%= link_to line.invoice.supplier.name, line.invoice %></td>
+          <td class="px-4 py-2 text-slate-600"><%= line.description %></td>
+          <td class="px-4 py-2 text-right font-mono"><%= number_to_currency(line.unit_price, unit: "CHF ", format: "%u %n") %></td>
+          <td class="px-4 py-2 text-right font-mono font-bold <%= 'text-red-600' if line.anomalous? %>">
+            <%= line.ratio ? number_to_percentage(line.ratio * 100, precision: 1) : "—" %>
+          </td>
+        </tr>
+      <% end %>
+      <% if @invoice_lines.empty? %>
+        <tr><td colspan="4" class="px-4 py-6 text-center text-slate-400">Aucune facture rapprochée pour cet article.</td></tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

@@ -9,6 +9,7 @@ class PriceItemsController < ApplicationController
   end
 
   def show
+    @invoice_lines = @price_item.invoice_lines.includes(invoice: :supplier).order(created_at: :desc).limit(20)
   end
 
   def new

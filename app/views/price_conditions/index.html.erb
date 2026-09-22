@@ -1,0 +1,40 @@
+<% content_for :title, "Conditions de prix" %>
+
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-bold text-slate-800">Conditions de prix négociées</h1>
+  <%= link_to "Nouvelle condition", new_price_condition_path, class: "bg-slate-800 text-white px-4 py-2 rounded hover:bg-slate-700" %>
+</div>
+
+<div class="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
+  <table class="w-full text-left">
+    <thead class="bg-slate-100 text-slate-600 text-sm uppercase">
+      <tr>
+        <th class="px-4 py-3">Fournisseur</th>
+        <th class="px-4 py-3">Article</th>
+        <th class="px-4 py-3 text-right">Prix négocié</th>
+        <th class="px-4 py-3">Validité</th>
+        <th class="px-4 py-3"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      <% @price_conditions.each do |condition| %>
+        <tr class="hover:bg-slate-50">
+          <td class="px-4 py-3 font-medium"><%= condition.supplier.name %></td>
+          <td class="px-4 py-3"><%= link_to condition.price_item.name, condition.price_item, class: "text-slate-700 hover:underline" %></td>
+          <td class="px-4 py-3 text-right font-mono"><%= number_to_currency(condition.negotiated_price, unit: "CHF ", format: "%u %n") %></td>
+          <td class="px-4 py-3 text-slate-600 text-sm">
+            <%= condition.valid_from.strftime("%d.%m.%Y") %> →
+            <%= condition.valid_until ? condition.valid_until.strftime("%d.%m.%Y") : "en cours" %>
+          </td>
+          <td class="px-4 py-3 text-right">
+            <%= link_to "Modifier", edit_price_condition_path(condition), class: "text-sm text-slate-600 hover:underline mr-3" %>
+            <%= link_to "Supprimer", condition, data: { turbo_method: :delete, turbo_confirm: "Supprimer cette condition ?" }, class: "text-sm text-red-600 hover:underline" %>
+          </td>
+        </tr>
+      <% end %>
+      <% if @price_conditions.empty? %>
+        <tr><td colspan="5" class="px-4 py-8 text-center text-slate-400">Aucune condition de prix.</td></tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

@@ -14,6 +14,41 @@ communique en français.
   changement de `reference_price` (voir callbacks dans `app/models/price_item.rb`).
   Ne pas créer/modifier ces lignes manuellement ailleurs que via les
   callbacks du modèle.
+- `Supplier` : fournisseurs (distinct des `Supplier` d'ESHOP-INDUNI, autre app).
+- `PriceCondition` : condition de prix négociée (fournisseur + article + prix +
+  période de validité). `Supplier#active_condition_for(price_item, on:)`
+  renvoie la condition en vigueur à une date donnée ; sinon on retombe sur
+  `PriceItem#reference_price`.
+- `Invoice` / `InvoiceLine` : « l'agent » de contrôle des factures (upload PDF
+  → `Invoice#parse!` extrait le texte et les lignes → rapprochement proposé
+  avec la bibliothèque → écran de contrôle humain (`invoices/show`) → sur
+  confirmation, `Invoice#integrate!` met à jour `PriceItem#reference_price`
+  pour chaque ligne rapprochée, ce qui alimente automatiquement l'historique
+  `PriceItemVersion` via le callback existant. **Rien n'est jamais intégré
+  sans validation humaine** — `parse!` ne fait que proposer.
+
+## Module factures / conditions de prix ("l'agent")
+
+- `app/services/invoice_parser.rb` : extraction de texte via `pdf-reader`
+  (uniquement le texte embarqué dans le PDF, **pas d'OCR** — un PDF scanné en
+  image donnera un texte vide) puis heuristique regex par ligne
+  (`description  quantité  prix_unitaire  total`, formats numériques suisses
+  avec `'` comme séparateur de milliers). C'est un best-effort : toujours
+  vérifié par un humain sur l'écran de contrôle avant intégration.
+- `app/services/price_item_matcher.rb` : rapprochement par recouvrement de
+  mots (Jaccard) après translittération (`I18n.transliterate`) pour ignorer
+  les accents — sans ce fix, "Beton" (facture, sans accent) ne matchait pas
+  "Béton" (bibliothèque). Seuil `MIN_SCORE = 0.34`, ajustable si trop/pas
+  assez de faux positifs en pratique.
+- Le ratio (`InvoiceLine#ratio`) = prix facturé / prix de référence effectif
+  (condition négociée active sinon `reference_price`). `anomalous?` flague
+  un écart de plus de 10 % dans un sens ou l'autre (affiché en rouge).
+- **Stockage des factures (ActiveStorage, service `:local`)** : sur Railway,
+  le système de fichiers est éphémère — un PDF uploadé sera perdu au
+  prochain redéploiement. Acceptable pour l'instant (le texte extrait et les
+  lignes sont en base, donc pas de perte de données métier), mais si la
+  relecture du PDF original doit être fiable dans la durée, migrer vers un
+  stockage S3-compatible (`config/storage.yml`) et pas juste `:local`.
 
 ## Points d'attention
 

@@ -1,0 +1,92 @@
+<% content_for :title, "Facture #{@invoice.supplier.name}" %>
+
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <h1 class="text-2xl font-bold text-slate-800"><%= @invoice.supplier.name %></h1>
+    <p class="text-sm text-slate-500">
+      <%= @invoice.invoice_number.presence || "sans numéro" %> ·
+      <%= @invoice.invoice_date&.strftime("%d.%m.%Y") || "sans date" %>
+    </p>
+  </div>
+  <div class="flex gap-2">
+    <% if @invoice.status != "integrated" %>
+      <%= button_to "Intégrer dans la bibliothèque", integrate_invoice_path(@invoice),
+            class: "bg-green-700 text-white px-4 py-2 rounded hover:bg-green-800",
+            data: { turbo_confirm: "Mettre à jour le prix de référence des articles rapprochés avec les montants de cette facture ?" } %>
+    <% else %>
+      <span class="text-sm font-semibold px-3 py-2 rounded bg-green-100 text-green-800">Intégrée</span>
+    <% end %>
+    <%= link_to "Retour", invoices_path, class: "px-4 py-2 text-slate-600 hover:underline" %>
+  </div>
+</div>
+
+<% unmatched = @invoice_lines.count { |l| l.price_item.nil? } %>
+<% anomalies = @invoice_lines.count(&:anomalous?) %>
+<div class="grid grid-cols-3 gap-4 mb-6 max-w-2xl">
+  <div class="bg-white border border-slate-200 rounded p-4">
+    <div class="text-xs uppercase text-slate-500">Lignes détectées</div>
+    <div class="text-xl font-bold text-slate-800"><%= @invoice_lines.size %></div>
+  </div>
+  <div class="bg-white border border-slate-200 rounded p-4">
+    <div class="text-xs uppercase text-slate-500">Non rapprochées</div>
+    <div class="text-xl font-bold <%= unmatched > 0 ? 'text-amber-600' : 'text-slate-800' %>"><%= unmatched %></div>
+  </div>
+  <div class="bg-white border border-slate-200 rounded p-4">
+    <div class="text-xs uppercase text-slate-500">Écarts de prix (±10%)</div>
+    <div class="text-xl font-bold <%= anomalies > 0 ? 'text-red-600' : 'text-slate-800' %>"><%= anomalies %></div>
+  </div>
+</div>
+
+<div class="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
+  <table class="w-full text-left text-sm">
+    <thead class="bg-slate-100 text-slate-600 uppercase text-xs">
+      <tr>
+        <th class="px-4 py-3">Description (facture)</th>
+        <th class="px-4 py-3">Article rapproché</th>
+        <th class="px-4 py-3 text-right">Qté</th>
+        <th class="px-4 py-3 text-right">Prix facturé</th>
+        <th class="px-4 py-3 text-right">Prix référence</th>
+        <th class="px-4 py-3 text-right">Ratio</th>
+        <th class="px-4 py-3"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      <% @invoice_lines.each do |line| %>
+        <tr class="<%= 'bg-red-50' if line.anomalous? %>">
+          <td class="px-4 py-3 max-w-xs">
+            <%= line.description %>
+            <% if line.matched_automatically %>
+              <span class="text-xs text-slate-400 block">rapprochement automatique</span>
+            <% end %>
+          </td>
+          <td class="px-4 py-3">
+            <%= form_with model: line, url: invoice_invoice_line_path(@invoice, line), method: :patch, class: "flex items-center gap-2" do |f| %>
+              <%= f.collection_select :price_item_id, @price_items, :id, :name,
+                    { include_blank: "— non rapproché —" },
+                    class: "border border-slate-300 rounded px-2 py-1 text-sm", onchange: "this.form.requestSubmit()" %>
+            <% end %>
+          </td>
+          <td class="px-4 py-3 text-right font-mono"><%= line.quantity %></td>
+          <td class="px-4 py-3 text-right font-mono"><%= number_to_currency(line.unit_price, unit: "CHF ", format: "%u %n") %></td>
+          <td class="px-4 py-3 text-right font-mono">
+            <%= line.reference_price ? number_to_currency(line.reference_price, unit: "CHF ", format: "%u %n") : "—" %>
+          </td>
+          <td class="px-4 py-3 text-right font-mono font-bold <%= 'text-red-600' if line.anomalous? %>">
+            <%= line.ratio ? number_to_percentage(line.ratio * 100, precision: 1) : "—" %>
+          </td>
+          <td class="px-4 py-3 text-right">
+            <%= link_to "Supprimer", invoice_invoice_line_path(@invoice, line), data: { turbo_method: :delete, turbo_confirm: "Supprimer cette ligne ?" }, class: "text-xs text-red-600 hover:underline" %>
+          </td>
+        </tr>
+      <% end %>
+      <% if @invoice_lines.empty? %>
+        <tr><td colspan="7" class="px-4 py-8 text-center text-slate-400">Aucune ligne détectée dans ce PDF (texte non extractible ou format non reconnu).</td></tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<details class="mt-6 max-w-2xl">
+  <summary class="text-sm text-slate-500 cursor-pointer">Texte brut extrait du PDF</summary>
+  <pre class="mt-2 bg-slate-900 text-slate-100 text-xs p-4 rounded overflow-auto max-h-64"><%= @invoice.raw_text %></pre>
+</details>

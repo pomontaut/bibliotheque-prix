@@ -1,0 +1,45 @@
+<% content_for :title, "Importer une facture" %>
+
+<h1 class="text-2xl font-bold text-slate-800 mb-6">Importer une facture (PDF)</h1>
+
+<div class="bg-white border border-slate-200 rounded shadow-sm p-6 max-w-xl">
+  <p class="text-sm text-slate-600 mb-4">
+    L'agent extrait le texte du PDF, détecte les lignes (description, quantité,
+    prix unitaire, total) et propose un rapprochement avec la bibliothèque de
+    prix. <strong>Rien n'est modifié tant que vous n'avez pas validé et cliqué
+    sur « Intégrer »</strong> sur l'écran de contrôle suivant.
+  </p>
+
+  <%= form_with model: @invoice, class: "space-y-4" do |f| %>
+    <% if @invoice.errors.any? %>
+      <div class="bg-red-50 border border-red-200 text-red-700 rounded px-4 py-3 text-sm">
+        <%= @invoice.errors.full_messages.join(", ") %>
+      </div>
+    <% end %>
+
+    <div>
+      <%= f.label :supplier_id, "Fournisseur", class: "block text-sm font-medium text-slate-700 mb-1" %>
+      <%= f.collection_select :supplier_id, @suppliers, :id, :name, { prompt: true }, class: "w-full border border-slate-300 rounded px-3 py-2" %>
+    </div>
+
+    <div>
+      <%= f.label :invoice_number, "N° de facture (optionnel)", class: "block text-sm font-medium text-slate-700 mb-1" %>
+      <%= f.text_field :invoice_number, class: "w-full border border-slate-300 rounded px-3 py-2" %>
+    </div>
+
+    <div>
+      <%= f.label :invoice_date, "Date de la facture", class: "block text-sm font-medium text-slate-700 mb-1" %>
+      <%= f.date_field :invoice_date, class: "w-full border border-slate-300 rounded px-3 py-2" %>
+    </div>
+
+    <div>
+      <%= f.label :file, "Fichier PDF", class: "block text-sm font-medium text-slate-700 mb-1" %>
+      <%= f.file_field :file, accept: "application/pdf", required: true, class: "block w-full text-sm text-slate-700" %>
+    </div>
+
+    <div class="flex gap-3">
+      <%= f.submit "Importer et analyser", class: "bg-slate-800 text-white px-4 py-2 rounded hover:bg-slate-700 cursor-pointer" %>
+      <%= link_to "Annuler", invoices_path, class: "px-4 py-2 text-slate-600 hover:underline" %>
+    </div>
+  <% end %>
+</div>

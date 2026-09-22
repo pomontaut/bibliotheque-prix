@@ -10,7 +10,76 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_21_111012) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_22_141155) do
+  create_table "active_storage_attachments", force: :cascade do |t|
+    t.bigint "blob_id", null: false
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.bigint "record_id", null: false
+    t.string "record_type", null: false
+    t.index ["blob_id"], name: "index_active_storage_attachments_on_blob_id"
+    t.index ["record_type", "record_id", "name", "blob_id"], name: "index_active_storage_attachments_uniqueness", unique: true
+  end
+
+  create_table "active_storage_blobs", force: :cascade do |t|
+    t.bigint "byte_size", null: false
+    t.string "checksum"
+    t.string "content_type"
+    t.datetime "created_at", null: false
+    t.string "filename", null: false
+    t.string "key", null: false
+    t.text "metadata"
+    t.string "service_name", null: false
+    t.index ["key"], name: "index_active_storage_blobs_on_key", unique: true
+  end
+
+  create_table "active_storage_variant_records", force: :cascade do |t|
+    t.bigint "blob_id", null: false
+    t.string "variation_digest", null: false
+    t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "invoice_lines", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "description", null: false
+    t.integer "invoice_id", null: false
+    t.boolean "matched_automatically", default: false, null: false
+    t.integer "price_item_id"
+    t.decimal "quantity", precision: 12, scale: 3
+    t.decimal "ratio", precision: 8, scale: 4
+    t.decimal "total", precision: 12, scale: 2
+    t.decimal "unit_price", precision: 12, scale: 2
+    t.datetime "updated_at", null: false
+    t.index ["invoice_id"], name: "index_invoice_lines_on_invoice_id"
+    t.index ["price_item_id"], name: "index_invoice_lines_on_price_item_id"
+  end
+
+  create_table "invoices", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.date "invoice_date"
+    t.string "invoice_number"
+    t.text "raw_text"
+    t.string "status", default: "pending", null: false
+    t.integer "supplier_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["supplier_id"], name: "index_invoices_on_supplier_id"
+  end
+
+  create_table "price_conditions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.decimal "negotiated_price", precision: 12, scale: 2, null: false
+    t.text "notes"
+    t.integer "price_item_id", null: false
+    t.integer "supplier_id", null: false
+    t.string "unit"
+    t.datetime "updated_at", null: false
+    t.date "valid_from", null: false
+    t.date "valid_until"
+    t.index ["price_item_id"], name: "index_price_conditions_on_price_item_id"
+    t.index ["supplier_id", "price_item_id", "valid_from"], name: "index_price_conditions_on_supplier_item_valid_from", unique: true
+    t.index ["supplier_id"], name: "index_price_conditions_on_supplier_id"
+  end
+
   create_table "price_item_versions", force: :cascade do |t|
     t.datetime "changed_at", null: false
     t.datetime "created_at", null: false
@@ -32,5 +101,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_21_111012) do
     t.index ["name"], name: "index_price_items_on_name"
   end
 
+  create_table "suppliers", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name"
+    t.text "notes"
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_suppliers_on_name", unique: true
+  end
+
+  add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "invoice_lines", "invoices"
+  add_foreign_key "invoice_lines", "price_items"
+  add_foreign_key "invoices", "suppliers"
+  add_foreign_key "price_conditions", "price_items"
+  add_foreign_key "price_conditions", "suppliers"
   add_foreign_key "price_item_versions", "price_items"
 end

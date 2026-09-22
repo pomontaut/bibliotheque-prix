@@ -1,5 +1,7 @@
 class PriceItem < ApplicationRecord
   has_many :price_item_versions, -> { order(changed_at: :desc) }, dependent: :destroy
+  has_many :price_conditions, dependent: :destroy
+  has_many :invoice_lines, dependent: :nullify
 
   validates :name, presence: true
   validates :reference_price, numericality: { greater_than_or_equal_to: 0 }

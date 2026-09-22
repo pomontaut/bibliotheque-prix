@@ -1,0 +1,33 @@
+<% content_for :title, "Fournisseurs" %>
+
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-bold text-slate-800">Fournisseurs</h1>
+  <%= link_to "Nouveau fournisseur", new_supplier_path, class: "bg-slate-800 text-white px-4 py-2 rounded hover:bg-slate-700" %>
+</div>
+
+<div class="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
+  <table class="w-full text-left">
+    <thead class="bg-slate-100 text-slate-600 text-sm uppercase">
+      <tr>
+        <th class="px-4 py-3">Nom</th>
+        <th class="px-4 py-3">Notes</th>
+        <th class="px-4 py-3"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      <% @suppliers.each do |supplier| %>
+        <tr class="hover:bg-slate-50">
+          <td class="px-4 py-3 font-medium"><%= supplier.name %></td>
+          <td class="px-4 py-3 text-slate-600"><%= supplier.notes %></td>
+          <td class="px-4 py-3 text-right">
+            <%= link_to "Modifier", edit_supplier_path(supplier), class: "text-sm text-slate-600 hover:underline mr-3" %>
+            <%= link_to "Supprimer", supplier, data: { turbo_method: :delete, turbo_confirm: "Supprimer #{supplier.name} ?" }, class: "text-sm text-red-600 hover:underline" %>
+          </td>
+        </tr>
+      <% end %>
+      <% if @suppliers.empty? %>
+        <tr><td colspan="3" class="px-4 py-8 text-center text-slate-400">Aucun fournisseur.</td></tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

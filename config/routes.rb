@@ -17,6 +17,16 @@ Rails.application.routes.draw do
     end
   end
 
+  resources :suppliers
+  resources :price_conditions
+
+  resources :invoices do
+    member do
+      post :integrate
+    end
+    resources :invoice_lines, only: %i[update destroy]
+  end
+
   # Defines the root path route ("/")
   root "price_items#index"
 end

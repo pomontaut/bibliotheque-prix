@@ -1,0 +1,48 @@
+<%= form_with model: price_condition, class: "space-y-4 max-w-xl" do |f| %>
+  <% if price_condition.errors.any? %>
+    <div class="bg-red-50 border border-red-200 text-red-700 rounded px-4 py-3 text-sm">
+      <%= price_condition.errors.full_messages.join(", ") %>
+    </div>
+  <% end %>
+
+  <div>
+    <%= f.label :supplier_id, "Fournisseur", class: "block text-sm font-medium text-slate-700 mb-1" %>
+    <%= f.collection_select :supplier_id, Supplier.order(:name), :id, :name, { prompt: true }, class: "w-full border border-slate-300 rounded px-3 py-2" %>
+  </div>
+
+  <div>
+    <%= f.label :price_item_id, "Article", class: "block text-sm font-medium text-slate-700 mb-1" %>
+    <%= f.collection_select :price_item_id, PriceItem.order(:name), :id, :name, { prompt: true }, class: "w-full border border-slate-300 rounded px-3 py-2" %>
+  </div>
+
+  <div>
+    <%= f.label :negotiated_price, "Prix négocié (CHF)", class: "block text-sm font-medium text-slate-700 mb-1" %>
+    <%= f.number_field :negotiated_price, step: 0.01, min: 0, class: "w-full border border-slate-300 rounded px-3 py-2" %>
+  </div>
+
+  <div>
+    <%= f.label :unit, "Unité", class: "block text-sm font-medium text-slate-700 mb-1" %>
+    <%= f.text_field :unit, class: "w-full border border-slate-300 rounded px-3 py-2" %>
+  </div>
+
+  <div class="grid grid-cols-2 gap-4">
+    <div>
+      <%= f.label :valid_from, "Valide à partir du", class: "block text-sm font-medium text-slate-700 mb-1" %>
+      <%= f.date_field :valid_from, class: "w-full border border-slate-300 rounded px-3 py-2" %>
+    </div>
+    <div>
+      <%= f.label :valid_until, "Jusqu'au (optionnel)", class: "block text-sm font-medium text-slate-700 mb-1" %>
+      <%= f.date_field :valid_until, class: "w-full border border-slate-300 rounded px-3 py-2" %>
+    </div>
+  </div>
+
+  <div>
+    <%= f.label :notes, "Notes", class: "block text-sm font-medium text-slate-700 mb-1" %>
+    <%= f.text_area :notes, rows: 3, class: "w-full border border-slate-300 rounded px-3 py-2" %>
+  </div>
+
+  <div class="flex gap-3">
+    <%= f.submit "Enregistrer", class: "bg-slate-800 text-white px-4 py-2 rounded hover:bg-slate-700 cursor-pointer" %>
+    <%= link_to "Annuler", price_conditions_path, class: "px-4 py-2 text-slate-600 hover:underline" %>
+  </div>
+<% end %>
