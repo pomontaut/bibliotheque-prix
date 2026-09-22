@@ -52,6 +52,20 @@ communique en français.
   les accents — sans ce fix, "Beton" (facture, sans accent) ne matchait pas
   "Béton" (bibliothèque). Seuil `MIN_SCORE = 0.34`, ajustable si trop/pas
   assez de faux positifs en pratique.
+- **Point de vente ≠ fournisseur facturant** : HGC Handel AG réémet des
+  factures pour du matériel acheté directement chez un fabricant/distributeur
+  (Sika Schweiz AG, Mapei Suisse SA, swisspor Romandie SA, Ciments Vigier SA,
+  Knauf Insulation GmbH observés à ce jour — ~20% du corpus testé). La ligne
+  "Point de vente: X, adresse" du PDF indique le vrai vendeur.
+  `InvoiceParser.extract_header` capture `point_of_sale` ;
+  `InvoiceParser.effective_supplier_name` renvoie ce nom seulement s'il ne
+  contient pas "HGC" (sinon on garde HGC Handel AG). `Invoice#parse!`
+  réassigne alors automatiquement `invoice.supplier` (créant le `Supplier`
+  si besoin) **avant** de rapprocher/créer les articles, pour que
+  `PriceCondition`/`SupplierArticleMapping` soient rattachés au vrai
+  fournisseur. Comportement automatique et permanent (pas une consigne
+  ponctuelle) : s'applique à chaque nouvelle facture uploadée, y compris
+  celles à venir.
 - `SupplierArticleMapping` (`supplier_id + article_number` unique) :
   mémoire d'apprentissage. Dès qu'un humain confirme/corrige le rapprochement
   d'une ligne ayant un `article_number` (écran de contrôle →

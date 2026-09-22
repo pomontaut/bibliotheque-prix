@@ -25,8 +25,20 @@ class InvoiceParser
   def self.extract_header(text)
     {
       invoice_number: text[/Num.ro de facture\s*:\s*(\S+)/, 1],
-      invoice_date: parse_date(text[/Date de facture\s*:\s*(\d{2}\.\d{2}\.\d{4})/, 1])
+      invoice_date: parse_date(text[/Date de facture\s*:\s*(\d{2}\.\d{2}\.\d{4})/, 1]),
+      point_of_sale: text[/Point de vente\s*:\s*(.+?)(?:,|\s+\d|\n)/, 1]&.strip
     }
+  end
+
+  # HGC re-invoices goods bought directly from a manufacturer/distributor —
+  # "Point de vente" then names that real seller (e.g. "Sika Schweiz AG",
+  # "Mapei Suisse SA") instead of HGC itself. When that happens, the price
+  # conditions really belong to that seller, not to "HGC Handel AG".
+  def self.effective_supplier_name(point_of_sale)
+    return nil if point_of_sale.blank?
+    return nil if point_of_sale.match?(/HGC/i)
+
+    point_of_sale
   end
 
   def self.extract_lines(text)

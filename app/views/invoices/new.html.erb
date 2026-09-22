@@ -8,6 +8,10 @@
     prix unitaire, total) et propose un rapprochement avec la bibliothèque de
     prix. <strong>Rien n'est modifié tant que vous n'avez pas validé et cliqué
     sur « Intégrer »</strong> sur l'écran de contrôle suivant.
+    Si la facture indique un « Point de vente » différent du fournisseur
+    facturant (ex: une facture HGC pour du matériel Sika ou Mapei), l'agent
+    corrige automatiquement le fournisseur de la facture pour que les prix
+    soient rattachés au vrai vendeur.
   </p>
 
   <%= form_with model: @invoice, class: "space-y-4" do |f| %>

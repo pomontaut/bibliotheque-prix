@@ -12,10 +12,13 @@ class Invoice < ApplicationRecord
 
     text = InvoiceParser.extract_text(file)
     header = InvoiceParser.extract_header(text)
+    real_supplier_name = InvoiceParser.effective_supplier_name(header[:point_of_sale])
+
     update!(
       raw_text: text,
       invoice_number: invoice_number.presence || header[:invoice_number],
-      invoice_date: invoice_date.presence || header[:invoice_date]
+      invoice_date: invoice_date.presence || header[:invoice_date],
+      supplier: real_supplier_name.present? ? Supplier.find_or_create_by!(name: real_supplier_name) : supplier
     )
 
     invoice_lines.destroy_all
