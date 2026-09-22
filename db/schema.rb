@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_22_144532) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_22_151542) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -49,6 +49,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_144532) do
     t.decimal "quantity", precision: 12, scale: 3
     t.decimal "ratio", precision: 8, scale: 4
     t.decimal "total", precision: 12, scale: 2
+    t.string "unit"
     t.decimal "unit_price", precision: 12, scale: 2
     t.datetime "updated_at", null: false
     t.index ["invoice_id"], name: "index_invoice_lines_on_invoice_id"
@@ -91,13 +92,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_144532) do
   end
 
   create_table "price_items", force: :cascade do |t|
+    t.string "article_number"
     t.string "category"
     t.datetime "created_at", null: false
+    t.decimal "last_order_quantity", precision: 12, scale: 3
     t.string "name", null: false
     t.text "notes"
     t.decimal "reference_price", precision: 12, scale: 2, default: "0.0", null: false
     t.string "unit"
     t.datetime "updated_at", null: false
+    t.index ["article_number"], name: "index_price_items_on_article_number"
     t.index ["category"], name: "index_price_items_on_category"
     t.index ["name"], name: "index_price_items_on_name"
   end

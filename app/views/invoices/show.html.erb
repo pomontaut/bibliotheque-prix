@@ -20,7 +20,7 @@
   </div>
 </div>
 
-<% unmatched = @invoice_lines.count { |l| l.price_item.nil? } %>
+<% unmatched = @invoice_lines.count { |l| l.price_item.nil? && !l.fee? } %>
 <% anomalies = @invoice_lines.count(&:anomalous?) %>
 <div class="grid grid-cols-3 gap-4 mb-6 max-w-2xl">
   <div class="bg-white border border-slate-200 rounded p-4">
@@ -62,13 +62,21 @@
             <% end %>
           </td>
           <td class="px-4 py-3">
-            <%= form_with model: line, url: invoice_invoice_line_path(@invoice, line), method: :patch, class: "flex items-center gap-2" do |f| %>
-              <%= f.collection_select :price_item_id, @price_items, :id, :name,
-                    { include_blank: "— non rapproché —" },
-                    class: "border border-slate-300 rounded px-2 py-1 text-sm", onchange: "this.form.requestSubmit()" %>
+            <% if line.fee? %>
+              <span class="text-xs font-semibold px-2 py-1 rounded bg-slate-100 text-slate-500">Frais / taxe — pas un article</span>
+            <% else %>
+              <%= form_with model: line, url: invoice_invoice_line_path(@invoice, line), method: :patch, class: "flex items-center gap-2" do |f| %>
+                <%= f.collection_select :price_item_id, @price_items, :id, :name,
+                      { include_blank: "— non rapproché —" },
+                      class: "border border-slate-300 rounded px-2 py-1 text-sm", onchange: "this.form.requestSubmit()" %>
+              <% end %>
+              <% if line.price_item.nil? %>
+                <%= button_to "Créer un article", create_price_item_invoice_invoice_line_path(@invoice, line),
+                      class: "text-xs text-slate-600 hover:underline mt-1 bg-transparent p-0 border-0 cursor-pointer" %>
+              <% end %>
             <% end %>
           </td>
-          <td class="px-4 py-3 text-right font-mono"><%= line.quantity %></td>
+          <td class="px-4 py-3 text-right font-mono"><%= line.quantity %> <span class="text-slate-400"><%= line.unit %></span></td>
           <td class="px-4 py-3 text-right font-mono"><%= number_to_currency(line.unit_price, unit: "CHF ", format: "%u %n") %></td>
           <td class="px-4 py-3 text-right font-mono">
             <%= line.reference_price ? number_to_currency(line.reference_price, unit: "CHF ", format: "%u %n") : "—" %>

@@ -18,8 +18,14 @@ class InvoicesController < ApplicationController
   def create
     @invoice = Invoice.new(invoice_params)
     if @invoice.save
-      @invoice.parse!
-      redirect_to @invoice, notice: "Facture importée : #{@invoice.invoice_lines.count} ligne(s) détectée(s). Vérifiez le rapprochement avant d'intégrer."
+      begin
+        @invoice.parse!
+        redirect_to @invoice, notice: "Facture importée : #{@invoice.invoice_lines.count} ligne(s) détectée(s). Vérifiez le rapprochement avant d'intégrer."
+      rescue Invoice::DuplicateError => e
+        existing = e.existing_invoice
+        @invoice.destroy
+        redirect_to existing, alert: e.message
+      end
     else
       @suppliers = Supplier.order(:name)
       render :new, status: :unprocessable_entity

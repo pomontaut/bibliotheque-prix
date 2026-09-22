@@ -10,11 +10,17 @@
 
 <div class="bg-white border border-slate-200 rounded shadow-sm p-6 max-w-xl mb-8">
   <dl class="grid grid-cols-2 gap-y-3 text-sm">
+    <dt class="text-slate-500">N° article</dt>
+    <dd class="text-slate-800 font-mono"><%= @price_item.article_number.presence || "—" %></dd>
+
     <dt class="text-slate-500">Catégorie</dt>
     <dd class="text-slate-800"><%= @price_item.category.presence || "—" %></dd>
 
     <dt class="text-slate-500">Unité</dt>
     <dd class="text-slate-800"><%= @price_item.unit.presence || "—" %></dd>
+
+    <dt class="text-slate-500">Quantité (dernier achat)</dt>
+    <dd class="text-slate-800"><%= @price_item.last_order_quantity.presence || "—" %></dd>
 
     <dt class="text-slate-500">Prix de référence</dt>
     <dd class="text-slate-800 font-mono"><%= number_to_currency(@price_item.reference_price, unit: "CHF ", format: "%u %n") %></dd>
@@ -49,6 +55,7 @@
   <table class="w-full text-left text-sm">
     <thead class="bg-slate-100 text-slate-600 uppercase text-xs">
       <tr>
+        <th class="px-4 py-2">N° facture</th>
         <th class="px-4 py-2">Fournisseur</th>
         <th class="px-4 py-2">Description facture</th>
         <th class="px-4 py-2 text-right">Prix facturé</th>
@@ -58,7 +65,8 @@
     <tbody class="divide-y divide-slate-100">
       <% @invoice_lines.each do |line| %>
         <tr class="<%= 'bg-red-50' if line.anomalous? %>">
-          <td class="px-4 py-2"><%= link_to line.invoice.supplier.name, line.invoice %></td>
+          <td class="px-4 py-2"><%= link_to line.invoice.invoice_number.presence || "—", line.invoice, class: "font-mono text-slate-700 hover:underline" %></td>
+          <td class="px-4 py-2"><%= line.invoice.supplier.name %></td>
           <td class="px-4 py-2 text-slate-600"><%= line.description %></td>
           <td class="px-4 py-2 text-right font-mono"><%= number_to_currency(line.unit_price, unit: "CHF ", format: "%u %n") %></td>
           <td class="px-4 py-2 text-right font-mono font-bold <%= 'text-red-600' if line.anomalous? %>">
@@ -67,7 +75,7 @@
         </tr>
       <% end %>
       <% if @invoice_lines.empty? %>
-        <tr><td colspan="4" class="px-4 py-6 text-center text-slate-400">Aucune facture rapprochée pour cet article.</td></tr>
+        <tr><td colspan="5" class="px-4 py-6 text-center text-slate-400">Aucune facture rapprochée pour cet article.</td></tr>
       <% end %>
     </tbody>
   </table>

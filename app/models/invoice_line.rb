@@ -11,6 +11,10 @@ class InvoiceLine < ApplicationRecord
     ratio.present? && (ratio < 0.9 || ratio > 1.1)
   end
 
+  def fee?
+    InvoiceParser.fee_article?(article_number)
+  end
+
   def reference_price
     return nil unless price_item
 

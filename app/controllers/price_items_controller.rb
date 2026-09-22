@@ -43,9 +43,9 @@ class PriceItemsController < ApplicationController
 
   def export
     csv = CSV.generate(headers: true) do |rows|
-      rows << %w[nom categorie unite prix_reference notes]
+      rows << %w[nom n_article categorie unite quantite prix_reference notes]
       PriceItem.order(:name).find_each do |item|
-        rows << [ item.name, item.category, item.unit, item.reference_price, item.notes ]
+        rows << [ item.name, item.article_number, item.category, item.unit, item.last_order_quantity, item.reference_price, item.notes ]
       end
     end
 
@@ -71,8 +71,10 @@ class PriceItemsController < ApplicationController
       next if name.blank?
 
       item = PriceItem.find_or_initialize_by(name: name)
+      item.article_number = row[:n_article]
       item.category = row[:categorie]
       item.unit = row[:unite]
+      item.last_order_quantity = row[:quantite]
       item.reference_price = row[:prix_reference]
       item.notes = row[:notes]
 
@@ -98,6 +100,6 @@ class PriceItemsController < ApplicationController
   end
 
   def price_item_params
-    params.require(:price_item).permit(:name, :category, :unit, :reference_price, :notes)
+    params.require(:price_item).permit(:name, :article_number, :category, :unit, :last_order_quantity, :reference_price, :notes)
   end
 end

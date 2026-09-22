@@ -16,13 +16,24 @@
   </div>
 
   <div>
+    <%= f.label :article_number, "N° article (fournisseur)", class: "block text-sm font-medium text-slate-700 mb-1" %>
+    <%= f.text_field :article_number, class: "w-full border border-slate-300 rounded px-3 py-2" %>
+  </div>
+
+  <div>
     <%= f.label :category, "Catégorie", class: "block text-sm font-medium text-slate-700 mb-1" %>
     <%= f.text_field :category, class: "w-full border border-slate-300 rounded px-3 py-2" %>
   </div>
 
-  <div>
-    <%= f.label :unit, "Unité (m2, ml, pièce...)", class: "block text-sm font-medium text-slate-700 mb-1" %>
-    <%= f.text_field :unit, class: "w-full border border-slate-300 rounded px-3 py-2" %>
+  <div class="grid grid-cols-2 gap-4">
+    <div>
+      <%= f.label :unit, "Unité (m2, ml, pièce...)", class: "block text-sm font-medium text-slate-700 mb-1" %>
+      <%= f.text_field :unit, class: "w-full border border-slate-300 rounded px-3 py-2" %>
+    </div>
+    <div>
+      <%= f.label :last_order_quantity, "Quantité (dernier achat)", class: "block text-sm font-medium text-slate-700 mb-1" %>
+      <%= f.number_field :last_order_quantity, step: 0.001, class: "w-full border border-slate-300 rounded px-3 py-2" %>
+    </div>
   </div>
 
   <div>

@@ -76,6 +76,32 @@ communique en français.
 - Le ratio (`InvoiceLine#ratio`) = prix facturé / prix de référence effectif
   (condition négociée active sinon `reference_price`). `anomalous?` flague
   un écart de plus de 10 % dans un sens ou l'autre (affiché en rouge).
+- **Frais/taxes exclus de la bibliothèque** : chez HGC, les numéros d'article
+  commençant par "2" (200000036 Frais de transport, 200000042 Taxe RPLP,
+  200000038 Emballage, 200000323 Frais de transport usine...) sont des
+  suppléments administratifs, jamais du matériel. `InvoiceParser.fee_article?`
+  détecte ce préfixe ; `Invoice#parse!` ne tente aucun rapprochement pour ces
+  lignes (`InvoiceLine#fee?`) et l'écran de contrôle affiche un badge au lieu
+  du menu de rapprochement — impossible de les transformer en `PriceItem`
+  (le bouton "Créer un article" est masqué pour elles).
+- **PriceItem** porte aussi `article_number` (n° fournisseur), `unit` et
+  `last_order_quantity` (quantité/unité de la dernière facture rapprochée) —
+  remplis automatiquement par `Invoice#integrate!` et par
+  `InvoiceLinesController#create_price_item` (bouton "Créer un article" sur
+  une ligne non rapprochée et non-frais, route `POST
+  .../invoice_lines/:id/create_price_item`). Le CSV import/export
+  (`price_items#export`/`import_upload`) inclut les colonnes
+  `n_article` et `quantite` en plus des colonnes historiques.
+- **Anti-doublon des factures** (`Invoice::DuplicateError`, levée par
+  `parse!`) : une facture déjà importée (même n° + même fournisseur effectif,
+  après réassignation via le Point de vente) est rejetée — la facture
+  nouvellement uploadée est détruite et l'utilisateur est renvoyé vers
+  l'originale, jamais retraitée silencieusement. Double vérification :
+  1) par `invoice_number`, 2) par l'empreinte (`checksum`) du fichier PDF
+  lui-même, car certains documents "Récapitulatif" ont un texte corrompu
+  (police/encodage cassé) qui empêche toute extraction du numéro — le
+  checksum reste fiable même quand le texte ne l'est pas. Comportement
+  permanent, actif pour chaque upload (formulaire ou script).
 - **Stockage des factures (ActiveStorage, service `:local`)** : sur Railway,
   le système de fichiers est éphémère — un PDF uploadé sera perdu au
   prochain redéploiement. Acceptable pour l'instant (le texte extrait et les
@@ -95,8 +121,9 @@ communique en français.
   formulaires `edit`/`new` — ne pas réutiliser le token d'un formulaire pour
   simuler un DELETE en test manuel (Rails utilise des tokens CSRF liés à
   l'action avec `per_form_csrf_tokens`).
-- Import CSV attend les colonnes `nom,categorie,unite,prix_reference,notes` ;
-  la correspondance se fait par `name` (un nom existant est mis à jour, sinon
+- Import CSV attend les colonnes
+  `nom,n_article,categorie,unite,quantite,prix_reference,notes` ; la
+  correspondance se fait par `name` (un nom existant est mis à jour, sinon
   créé).
 
 ## Vérification locale

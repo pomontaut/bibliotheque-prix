@@ -19,9 +19,11 @@
   <table class="w-full text-left">
     <thead class="bg-slate-100 text-slate-600 text-sm uppercase">
       <tr>
+        <th class="px-4 py-3">N° article</th>
         <th class="px-4 py-3">Nom</th>
         <th class="px-4 py-3">Catégorie</th>
         <th class="px-4 py-3">Unité</th>
+        <th class="px-4 py-3 text-right">Quantité</th>
         <th class="px-4 py-3 text-right">Prix de référence</th>
         <th class="px-4 py-3">Mis à jour le</th>
         <th class="px-4 py-3"></th>
@@ -30,9 +32,11 @@
     <tbody class="divide-y divide-slate-100">
       <% @price_items.each do |item| %>
         <tr class="hover:bg-slate-50">
+          <td class="px-4 py-3 font-mono text-xs text-slate-500"><%= item.article_number %></td>
           <td class="px-4 py-3 font-medium"><%= link_to item.name, item, class: "text-slate-800 hover:underline" %></td>
           <td class="px-4 py-3 text-slate-600"><%= item.category %></td>
           <td class="px-4 py-3 text-slate-600"><%= item.unit %></td>
+          <td class="px-4 py-3 text-right font-mono text-slate-600"><%= item.last_order_quantity %></td>
           <td class="px-4 py-3 text-right font-mono"><%= number_to_currency(item.reference_price, unit: "CHF ", format: "%u %n") %></td>
           <td class="px-4 py-3 text-slate-500 text-sm"><%= item.updated_at.strftime("%d.%m.%Y") %></td>
           <td class="px-4 py-3 text-right">
@@ -43,7 +47,7 @@
       <% end %>
       <% if @price_items.empty? %>
         <tr>
-          <td colspan="6" class="px-4 py-8 text-center text-slate-400">Aucun article trouvé.</td>
+          <td colspan="8" class="px-4 py-8 text-center text-slate-400">Aucun article trouvé.</td>
         </tr>
       <% end %>
     </tbody>

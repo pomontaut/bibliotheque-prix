@@ -10,8 +10,8 @@
 # by a human before ../models/invoice.rb#integrate! is called.
 class InvoiceParser
   NUMBER = /-?[\d'’]+(?:[.,]\d+)?-?/
-  MERGED_QTY_UNIT = /\A(\d+(?:[.,]\d+)?)-?([A-Za-zÀ-ÿ]{1,4})\z/
   UNIT_FRAGMENT = /\A(PCE|KGR|KGM|KGB|KG|SAC|PAQ|HST|M2|M3|MT|ML|CM|AC|L|K|G|S)\z/i
+  MERGED_QTY_UNIT = /\A(\d+(?:[.,]\d+)?)-?(PCE|KGR|KGM|KGB|KG|SAC|PAQ|HST|M2|M3|MT|ML|CM|AC|L|K|G|S)\z/i
   ITEM_LINE = /\A(?<pos>\d+)\s+(?<article>\d{5,})\s+/
 
   def self.extract_text(attachment)
@@ -33,16 +33,30 @@ class InvoiceParser
   # HGC re-invoices goods bought directly from a manufacturer/distributor —
   # "Point de vente" then names that real seller (e.g. "Sika Schweiz AG",
   # "Mapei Suisse SA") instead of HGC itself. When that happens, the price
-  # conditions really belong to that seller, not to "HGC Handel AG".
+  # conditions really belong to that seller, not to HGC.
+  #
+  # HGC itself appears under several self-referential names depending on the
+  # invoice's age/template — "HGC Handel AG" (legal/payment name), "HGC
+  # Commerce SA" (a retail point of sale) and "HG COMMERCIALE" (older
+  # template, pre-rename) have all been observed. Match the "HG"/"HGC" word
+  # itself rather than a single exact name so any of these stay grouped
+  # together instead of splintering into separate Suppliers.
   def self.effective_supplier_name(point_of_sale)
     return nil if point_of_sale.blank?
-    return nil if point_of_sale.match?(/HGC/i)
+    return nil if point_of_sale.match?(/\bHGC?\b/i)
 
     point_of_sale
   end
 
   def self.extract_lines(text)
     text.to_s.each_line.filter_map { |line| parse_item_line(line) }
+  end
+
+  # HGC's own numbering: article numbers starting with "2" are administrative
+  # surcharges (Taxe RPLP, Frais de transport, Emballage...), never a
+  # purchasable material — they must never become (or match) a PriceItem.
+  def self.fee_article?(article_number)
+    article_number.to_s.match?(/\A2\d{5,}\z/)
   end
 
   def self.parse_item_line(line)
@@ -85,7 +99,25 @@ class InvoiceParser
       total
     end
 
-    { article_number: match[:article], description: description, quantity: quantity, unit_price: unit_price, total: total }
+    { article_number: match[:article], description: description, quantity: quantity, unit_price: unit_price, total: total, unit: unit_after(tokens, boundary) }
+  end
+
+  # The unit code sits right after the quantity token — either merged into it
+  # ("6SAC") or as one or two short fragments split by the PDF's spacing
+  # ("K G" instead of "KG").
+  def self.unit_after(tokens, boundary)
+    qty_token = tokens[boundary]
+    if (merged = qty_token.match(MERGED_QTY_UNIT))
+      return merged[2].upcase
+    end
+
+    parts = []
+    (boundary + 1).upto([ boundary + 2, tokens.size - 1 ].min) do |i|
+      break unless tokens[i]&.match?(UNIT_FRAGMENT)
+
+      parts << tokens[i].upcase
+    end
+    parts.join.presence
   end
 
   def self.numeric_value(token)
