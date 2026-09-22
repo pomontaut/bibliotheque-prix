@@ -4,12 +4,18 @@
 class PriceItemMatcher
   MIN_SCORE = 0.34
 
-  def self.best_match(description)
+  # `scope` restricts which PriceItems are candidates. Matching across ALL
+  # suppliers is dangerous: different suppliers' catalogs reuse similar
+  # generic wording ("swissporXPS 300 GE gaufré" turned up worded almost
+  # identically on Mapei, Sika and swisspor invoices) and would otherwise
+  # get silently merged into one PriceItem, corrupting its price history
+  # with unrelated products. Callers should scope to the invoice's supplier.
+  def self.best_match(description, scope: PriceItem.all)
     words = normalize(description)
     return nil if words.empty?
 
-    best = PriceItem.find_each.map { |item| [item, score(words, normalize(item.name))] }
-                     .max_by { |_, score| score }
+    best = scope.find_each.map { |item| [item, score(words, normalize(item.name))] }
+                .max_by { |_, score| score }
 
     best && best.last >= MIN_SCORE ? best.first : nil
   end

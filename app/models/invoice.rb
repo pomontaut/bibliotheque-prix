@@ -70,7 +70,13 @@ class Invoice < ApplicationRecord
 
   def find_match(article_number, description)
     mapping = supplier.supplier_article_mappings.find_by(article_number: article_number) if article_number.present?
-    mapping&.price_item || PriceItemMatcher.best_match(description)
+    return mapping.price_item if mapping
+
+    # Scoped to this supplier's own items (by category, which is set to the
+    # supplier's name when an item is bootstrapped from an invoice line) —
+    # matching across all suppliers would merge different companies'
+    # similarly-worded but distinct products into the same PriceItem.
+    PriceItemMatcher.best_match(description, scope: PriceItem.where(category: supplier.name))
   end
 
   # Updates each matched article's reference price (and known unit/quantity/

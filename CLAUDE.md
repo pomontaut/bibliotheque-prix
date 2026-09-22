@@ -51,7 +51,16 @@ communique en français.
   mots (Jaccard) après translittération (`I18n.transliterate`) pour ignorer
   les accents — sans ce fix, "Beton" (facture, sans accent) ne matchait pas
   "Béton" (bibliothèque). Seuil `MIN_SCORE = 0.34`, ajustable si trop/pas
-  assez de faux positifs en pratique.
+  assez de faux positifs en pratique. **`best_match` doit toujours recevoir
+  `scope:` limité au fournisseur de la facture** (`Invoice#find_match` le
+  fait via `PriceItem.where(category: supplier.name)`) — sans ça, des
+  produits différents mais au libellé proche chez des fournisseurs distincts
+  (ex: "swissporXPS 300 GE gaufré" formulé quasi identiquement sur des
+  factures Mapei, Sika et swisspor) se retrouvent fusionnés dans un seul
+  `PriceItem`, avec un historique de prix qui mélange des produits sans
+  rapport. Un appel `best_match(description)` sans `scope:` cherche par
+  défaut dans tout `PriceItem` — ne jamais faire ça pour du rapprochement de
+  facture.
 - **Point de vente ≠ fournisseur facturant** : HGC Handel AG réémet des
   factures pour du matériel acheté directement chez un fabricant/distributeur
   (Sika Schweiz AG, Mapei Suisse SA, swisspor Romandie SA, Ciments Vigier SA,
