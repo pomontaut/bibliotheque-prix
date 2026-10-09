@@ -157,6 +157,23 @@ communique en français.
   lignes sont en base, donc pas de perte de données métier), mais si la
   relecture du PDF original doit être fiable dans la durée, migrer vers un
   stockage S3-compatible (`config/storage.yml`) et pas juste `:local`.
+- **Import depuis un historique Excel structuré** (ex: export de factures
+  d'un fournisseur comme Gravières d'Epeisses SA, colonnes
+  date/n°facture/fournisseur/n°article/désignation/prix/quantité/unité
+  déjà tabulaires) : pas besoin de `InvoiceParser`, on peut créer
+  `Invoice`/`InvoiceLine` directement avec `Invoice#find_match` pour le
+  rapprochement (fonctionne même sans n° d'article, par recouvrement de mots
+  sur la désignation). **Toujours exclure les lignes de total de facture**
+  avant rapprochement (`/total|TVA|escompte|net.{0,3}payer|sous.total/i` sur
+  la désignation) — un export brut inclut souvent "Total HT (CHF)", "TVA
+  8.1 % (CHF)" comme fausses "lignes d'article" scattées dans les données,
+  qui sinon polluent la bibliothèque exactement comme les frais HGC
+  (200000xxx). Traiter les lignes par ordre chronologique croissant pour que
+  `PriceItem#reference_price` reflète bien le prix le plus récent.
+  Il n'existe pas encore d'écran d'upload dédié pour ce format — l'import
+  s'est fait via un script `rails runner` ponctuel ; en construire un
+  réutilisable (upload + mapping de colonnes) si ce type de fichier doit
+  revenir régulièrement.
 
 ## Points d'attention
 
