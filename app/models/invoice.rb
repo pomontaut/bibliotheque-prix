@@ -110,6 +110,11 @@ class Invoice < ApplicationRecord
           unit: line.price_item.unit.presence || line.unit,
           article_number: line.price_item.article_number.presence || line.article_number,
           last_order_quantity: line.quantity,
+          last_total: line.total,
+          currency: currency,
+          delivery_address: delivery_address,
+          delivery_type: delivery_type,
+          invoicing_supplier_name: supplier.name,
           last_invoice_number: invoice_number,
           last_invoice_date: invoice_date
         )

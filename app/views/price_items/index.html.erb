@@ -10,28 +10,35 @@
 </div>
 
 <%= form_with url: price_items_path, method: :get, class: "flex gap-3 mb-6" do %>
-  <%= text_field_tag :q, params[:q], placeholder: "Rechercher un article, une catégorie...", class: "flex-1 border border-slate-300 rounded px-3 py-2" %>
-  <%= select_tag :category, options_for_select(@categories, params[:category]), include_blank: "Toutes les catégories", class: "border border-slate-300 rounded px-3 py-2" %>
+  <%= text_field_tag :q, params[:q], placeholder: "Rechercher un article, un fournisseur...", class: "flex-1 border border-slate-300 rounded px-3 py-2" %>
+  <%= select_tag :category, options_for_select(@categories, params[:category]), include_blank: "Tous les fournisseurs", class: "border border-slate-300 rounded px-3 py-2" %>
   <%= submit_tag "Filtrer", class: "bg-slate-200 text-slate-800 px-4 py-2 rounded hover:bg-slate-300" %>
 <% end %>
 
-<div class="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
+<div class="bg-white border border-slate-200 rounded shadow-sm overflow-x-auto">
   <table class="w-full text-left">
-    <thead class="bg-slate-100 text-slate-600 text-sm uppercase">
+    <thead class="bg-slate-100 text-slate-600 text-xs uppercase">
       <tr>
-        <th class="px-4 py-3">N° article</th>
-        <th class="px-4 py-3">Nom</th>
-        <th class="px-4 py-3">Catégorie</th>
+        <th class="px-4 py-3">Date du document</th>
+        <th class="px-4 py-3">N° offre / facture</th>
+        <th class="px-4 py-3">Nom du fournisseur</th>
+        <th class="px-4 py-3">Fournisseur factureur</th>
+        <th class="px-4 py-3">Numero d'article</th>
+        <th class="px-4 py-3">Désignation de l'article</th>
+        <th class="px-4 py-3 text-right">Prix unitaire inclus rabais</th>
+        <th class="px-4 py-3 text-right">Quantité unitaire</th>
         <th class="px-4 py-3">Unité</th>
-        <th class="px-4 py-3 text-right">Quantité</th>
-        <th class="px-4 py-3 text-right">Prix de référence</th>
-        <th class="px-4 py-3">Mis à jour le</th>
+        <th class="px-4 py-3 text-right">Montant total article</th>
         <th class="px-4 py-3"></th>
       </tr>
     </thead>
     <tbody class="divide-y divide-slate-100">
       <% @price_items.each do |item| %>
         <tr class="hover:bg-slate-50">
+          <td class="px-4 py-3 text-slate-500 text-sm whitespace-nowrap"><%= item.last_invoice_date&.strftime("%d.%m.%Y") %></td>
+          <td class="px-4 py-3 font-mono text-xs text-slate-600"><%= item.last_invoice_number %></td>
+          <td class="px-4 py-3 text-slate-600"><%= item.category %></td>
+          <td class="px-4 py-3 text-slate-500 text-sm"><%= item.invoicing_supplier_name %></td>
           <td class="px-4 py-3 font-mono text-xs">
             <% if item.article_number.present? %>
               <% versions = item.price_item_versions.sort_by(&:changed_at).reverse %>
@@ -46,7 +53,7 @@
                       <% versions.first(5).each do |v| %>
                         <li class="flex justify-between text-xs text-slate-700">
                           <span><%= v.changed_at.strftime("%d.%m.%Y") %></span>
-                          <span class="font-mono"><%= number_to_currency(v.reference_price, unit: "CHF ", format: "%u %n") %></span>
+                          <span class="font-mono"><%= number_to_currency(v.reference_price, unit: "#{item.currency} ", format: "%u %n") %></span>
                         </li>
                       <% end %>
                     </ul>
@@ -59,12 +66,11 @@
             <% end %>
           </td>
           <td class="px-4 py-3 font-medium"><%= link_to item.name, item, class: "text-slate-800 hover:underline" %></td>
-          <td class="px-4 py-3 text-slate-600"><%= item.category %></td>
-          <td class="px-4 py-3 text-slate-600"><%= item.unit %></td>
+          <td class="px-4 py-3 text-right font-mono"><%= number_to_currency(item.reference_price, unit: "#{item.currency} ", format: "%u %n") %></td>
           <td class="px-4 py-3 text-right font-mono text-slate-600"><%= item.last_order_quantity %></td>
-          <td class="px-4 py-3 text-right font-mono"><%= number_to_currency(item.reference_price, unit: "CHF ", format: "%u %n") %></td>
-          <td class="px-4 py-3 text-slate-500 text-sm"><%= item.updated_at.strftime("%d.%m.%Y") %></td>
-          <td class="px-4 py-3 text-right">
+          <td class="px-4 py-3 text-slate-600"><%= item.unit %></td>
+          <td class="px-4 py-3 text-right font-mono text-slate-600"><%= item.last_total.present? ? number_to_currency(item.last_total, unit: "#{item.currency} ", format: "%u %n") : nil %></td>
+          <td class="px-4 py-3 text-right whitespace-nowrap">
             <%= link_to "Modifier", edit_price_item_path(item), class: "text-sm text-slate-600 hover:underline mr-3" %>
             <%= link_to "Supprimer", item, data: { turbo_method: :delete, turbo_confirm: "Supprimer #{item.name} ?" }, class: "text-sm text-red-600 hover:underline" %>
           </td>
@@ -72,7 +78,7 @@
       <% end %>
       <% if @price_items.empty? %>
         <tr>
-          <td colspan="8" class="px-4 py-8 text-center text-slate-400">Aucun article trouvé.</td>
+          <td colspan="11" class="px-4 py-8 text-center text-slate-400">Aucun article trouvé.</td>
         </tr>
       <% end %>
     </tbody>

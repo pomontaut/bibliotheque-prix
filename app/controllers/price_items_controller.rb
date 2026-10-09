@@ -48,11 +48,31 @@ class PriceItemsController < ApplicationController
     redirect_to price_items_path, notice: "Article supprimé.", status: :see_other
   end
 
+  # Column order/wording matches the reference spreadsheet format exactly
+  # (date du document, n° de l'offre ou de la facture, Nom du fournisseur,
+  # numero d'article, désignation de l'article, prix unitaire inclus
+  # rabais, unité monétaire, quantité unitaire, unité de la quantité,
+  # Montant total article, Adresse de livraison, Type de livraison,
+  # Fournisseur factureur) so a file in that format can round-trip through
+  # export/import without reshaping.
+  CSV_HEADERS = [
+    "date du document", "n° de l'offre ou de la facture", "Nom du fournisseur",
+    "numero d'article", "désignation de l'article", "prix unitaire inclus rabais",
+    "unité monétaire (chf, eur, usd, etc...)", "quantité unitaire",
+    "unité de la quantité (mètre, kg, etc....)", "Montant total article",
+    "Adresse de livraison", "Type de livraison", "Fournisseur factureur"
+  ].freeze
+
   def export
     csv = CSV.generate(headers: true) do |rows|
-      rows << %w[nom n_article categorie unite quantite prix_reference notes]
+      rows << CSV_HEADERS
       PriceItem.order(:name).find_each do |item|
-        rows << [ item.name, item.article_number, item.category, item.unit, item.last_order_quantity, item.reference_price, item.notes ]
+        rows << [
+          item.last_invoice_date, item.last_invoice_number, item.category,
+          item.article_number, item.name, item.reference_price, item.currency,
+          item.last_order_quantity, item.unit, item.last_total,
+          item.delivery_address, item.delivery_type, item.invoicing_supplier_name
+        ]
       end
     end
 
@@ -61,6 +81,29 @@ class PriceItemsController < ApplicationController
 
   def import
   end
+
+  # Normalizes a header to match regardless of accents/case/parenthetical
+  # hints ("unité monétaire (chf, eur...)" -> "unite_monetaire"), so a file
+  # that is literally the reference spreadaheet's header row imports as-is.
+  def self.normalize_header(header)
+    I18n.transliterate(header.to_s).downcase.gsub(/\(.*?\)/, "").strip.gsub(/[^a-z0-9]+/, "_").gsub(/_+$/, "")
+  end
+
+  HEADER_MAP = {
+    "date_du_document" => :last_invoice_date,
+    "n_de_l_offre_ou_de_la_facture" => :last_invoice_number,
+    "nom_du_fournisseur" => :category,
+    "numero_d_article" => :article_number,
+    "designation_de_l_article" => :name,
+    "prix_unitaire_inclus_rabais" => :reference_price,
+    "unite_monetaire" => :currency,
+    "quantite_unitaire" => :last_order_quantity,
+    "unite_de_la_quantite" => :unit,
+    "montant_total_article" => :last_total,
+    "adresse_de_livraison" => :delivery_address,
+    "type_de_livraison" => :delivery_type,
+    "fournisseur_factureur" => :invoicing_supplier_name
+  }.freeze
 
   def import_upload
     file = params[:file]
@@ -73,17 +116,23 @@ class PriceItemsController < ApplicationController
     updated = 0
     errors = []
 
-    CSV.foreach(file.path, headers: true, header_converters: :symbol) do |row|
-      name = row[:nom].to_s.strip
+    CSV.foreach(file.path, headers: true, header_converters: ->(h) { HEADER_MAP[self.class.normalize_header(h)] || h }) do |row|
+      name = row[:name].to_s.strip
       next if name.blank?
 
       item = PriceItem.find_or_initialize_by(name: name)
-      item.article_number = row[:n_article]
-      item.category = row[:categorie]
-      item.unit = row[:unite]
-      item.last_order_quantity = row[:quantite]
-      item.reference_price = row[:prix_reference]
-      item.notes = row[:notes]
+      item.article_number = row[:article_number]
+      item.category = row[:category]
+      item.invoicing_supplier_name = row[:invoicing_supplier_name]
+      item.unit = row[:unit]
+      item.last_order_quantity = row[:last_order_quantity]
+      item.reference_price = row[:reference_price]
+      item.currency = row[:currency].presence || "CHF"
+      item.last_total = row[:last_total]
+      item.delivery_address = row[:delivery_address]
+      item.delivery_type = row[:delivery_type]
+      item.last_invoice_number = row[:last_invoice_number]
+      item.last_invoice_date = row[:last_invoice_date].presence
 
       was_new_record = item.new_record?
       if item.save
@@ -107,6 +156,10 @@ class PriceItemsController < ApplicationController
   end
 
   def price_item_params
-    params.require(:price_item).permit(:name, :article_number, :category, :unit, :last_order_quantity, :reference_price, :notes)
+    params.require(:price_item).permit(
+      :name, :article_number, :category, :unit, :last_order_quantity, :reference_price,
+      :notes, :currency, :last_total, :delivery_address, :delivery_type,
+      :invoicing_supplier_name, :last_invoice_number, :last_invoice_date
+    )
   end
 end

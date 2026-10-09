@@ -10,7 +10,19 @@
 
 <div class="bg-white border border-slate-200 rounded shadow-sm p-6 max-w-xl mb-8">
   <dl class="grid grid-cols-2 gap-y-3 text-sm">
-    <dt class="text-slate-500">N° article</dt>
+    <dt class="text-slate-500">Date du document</dt>
+    <dd class="text-slate-800"><%= @price_item.last_invoice_date&.strftime("%d.%m.%Y") || "—" %></dd>
+
+    <dt class="text-slate-500">N° de l'offre ou de la facture</dt>
+    <dd class="text-slate-800 font-mono"><%= @price_item.last_invoice_number.presence || "—" %></dd>
+
+    <dt class="text-slate-500">Nom du fournisseur</dt>
+    <dd class="text-slate-800"><%= @price_item.category.presence || "—" %></dd>
+
+    <dt class="text-slate-500">Fournisseur factureur</dt>
+    <dd class="text-slate-800"><%= @price_item.invoicing_supplier_name.presence || "—" %></dd>
+
+    <dt class="text-slate-500">Numero d'article</dt>
     <dd class="text-slate-800">
       <% if @price_item.article_number.present? %>
         <span class="font-mono bg-amber-100 text-amber-900 px-2 py-0.5 rounded font-semibold"><%= @price_item.article_number %></span>
@@ -19,17 +31,29 @@
       <% end %>
     </dd>
 
-    <dt class="text-slate-500">Catégorie</dt>
-    <dd class="text-slate-800"><%= @price_item.category.presence || "—" %></dd>
+    <dt class="text-slate-500">Désignation de l'article</dt>
+    <dd class="text-slate-800"><%= @price_item.name %></dd>
 
-    <dt class="text-slate-500">Unité</dt>
-    <dd class="text-slate-800"><%= @price_item.unit.presence || "—" %></dd>
+    <dt class="text-slate-500">Prix unitaire inclus rabais</dt>
+    <dd class="text-slate-800 font-mono"><%= number_to_currency(@price_item.reference_price, unit: "#{@price_item.currency} ", format: "%u %n") %></dd>
 
-    <dt class="text-slate-500">Quantité (dernier achat)</dt>
+    <dt class="text-slate-500">Unité monétaire</dt>
+    <dd class="text-slate-800"><%= @price_item.currency %></dd>
+
+    <dt class="text-slate-500">Quantité unitaire</dt>
     <dd class="text-slate-800"><%= @price_item.last_order_quantity.presence || "—" %></dd>
 
-    <dt class="text-slate-500">Prix de référence</dt>
-    <dd class="text-slate-800 font-mono"><%= number_to_currency(@price_item.reference_price, unit: "CHF ", format: "%u %n") %></dd>
+    <dt class="text-slate-500">Unité de la quantité</dt>
+    <dd class="text-slate-800"><%= @price_item.unit.presence || "—" %></dd>
+
+    <dt class="text-slate-500">Montant total article</dt>
+    <dd class="text-slate-800 font-mono"><%= @price_item.last_total.present? ? number_to_currency(@price_item.last_total, unit: "#{@price_item.currency} ", format: "%u %n") : "—" %></dd>
+
+    <dt class="text-slate-500">Adresse de livraison</dt>
+    <dd class="text-slate-800"><%= @price_item.delivery_address.presence || "—" %></dd>
+
+    <dt class="text-slate-500">Type de livraison</dt>
+    <dd class="text-slate-800"><%= @price_item.delivery_type.presence || "—" %></dd>
 
     <dt class="text-slate-500">Notes</dt>
     <dd class="text-slate-800"><%= simple_format(@price_item.notes.presence || "—") %></dd>

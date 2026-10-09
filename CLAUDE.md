@@ -9,7 +9,21 @@ communique en français.
 
 ## Modèles
 
-- `PriceItem` : `name`, `category`, `unit`, `reference_price`, `notes`.
+- `PriceItem` : champs alignés sur le format de référence de l'utilisateur
+  (colonnes de son fichier Excel de suivi) — `last_invoice_date` (date du
+  document), `last_invoice_number` (n° de l'offre ou de la facture),
+  `category` (Nom du fournisseur — le vrai vendeur), `invoicing_supplier_name`
+  (Fournisseur factureur — l'entité qui émet la facture, peut différer :
+  voir "Point de vente ≠ fournisseur facturant" plus bas), `article_number`
+  (numero d'article), `name` (désignation de l'article), `reference_price`
+  (prix unitaire inclus rabais, donc déjà net), `currency` (unité monétaire,
+  "CHF" par défaut), `last_order_quantity` (quantité unitaire), `unit`
+  (unité de la quantité), `last_total` (Montant total article),
+  `delivery_address`, `delivery_type`. Le CSV export/import
+  (`PriceItemsController::CSV_HEADERS`/`HEADER_MAP`) utilise les libellés
+  exacts de ce format pour que le fichier de l'utilisateur s'importe tel
+  quel, dans n'importe quel ordre de colonnes (normalisation par accents/
+  casse/parenthèses dans `normalize_header`).
 - `PriceItemVersion` : snapshot historique créé automatiquement à chaque
   changement de `reference_price` (voir callbacks dans `app/models/price_item.rb`).
   Ne pas créer/modifier ces lignes manuellement ailleurs que via les

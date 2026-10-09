@@ -10,35 +10,73 @@
     </div>
   <% end %>
 
-  <div>
-    <%= f.label :name, "Nom", class: "block text-sm font-medium text-slate-700 mb-1" %>
-    <%= f.text_field :name, class: "w-full border border-slate-300 rounded px-3 py-2" %>
-  </div>
-
-  <div>
-    <%= f.label :article_number, "N° article (fournisseur)", class: "block text-sm font-medium text-slate-700 mb-1" %>
-    <%= f.text_field :article_number, class: "w-full border border-slate-300 rounded px-3 py-2" %>
-  </div>
-
-  <div>
-    <%= f.label :category, "Catégorie", class: "block text-sm font-medium text-slate-700 mb-1" %>
-    <%= f.text_field :category, class: "w-full border border-slate-300 rounded px-3 py-2" %>
+  <div class="grid grid-cols-2 gap-4">
+    <div>
+      <%= f.label :last_invoice_date, "Date du document", class: "block text-sm font-medium text-slate-700 mb-1" %>
+      <%= f.date_field :last_invoice_date, class: "w-full border border-slate-300 rounded px-3 py-2" %>
+    </div>
+    <div>
+      <%= f.label :last_invoice_number, "N° de l'offre ou de la facture", class: "block text-sm font-medium text-slate-700 mb-1" %>
+      <%= f.text_field :last_invoice_number, class: "w-full border border-slate-300 rounded px-3 py-2" %>
+    </div>
   </div>
 
   <div class="grid grid-cols-2 gap-4">
     <div>
-      <%= f.label :unit, "Unité (m2, ml, pièce...)", class: "block text-sm font-medium text-slate-700 mb-1" %>
-      <%= f.text_field :unit, class: "w-full border border-slate-300 rounded px-3 py-2" %>
+      <%= f.label :category, "Nom du fournisseur", class: "block text-sm font-medium text-slate-700 mb-1" %>
+      <%= f.text_field :category, class: "w-full border border-slate-300 rounded px-3 py-2" %>
     </div>
     <div>
-      <%= f.label :last_order_quantity, "Quantité (dernier achat)", class: "block text-sm font-medium text-slate-700 mb-1" %>
-      <%= f.number_field :last_order_quantity, step: 0.001, class: "w-full border border-slate-300 rounded px-3 py-2" %>
+      <%= f.label :invoicing_supplier_name, "Fournisseur factureur", class: "block text-sm font-medium text-slate-700 mb-1" %>
+      <%= f.text_field :invoicing_supplier_name, class: "w-full border border-slate-300 rounded px-3 py-2" %>
     </div>
   </div>
 
   <div>
-    <%= f.label :reference_price, "Prix de référence (CHF)", class: "block text-sm font-medium text-slate-700 mb-1" %>
-    <%= f.number_field :reference_price, step: 0.01, min: 0, class: "w-full border border-slate-300 rounded px-3 py-2" %>
+    <%= f.label :article_number, "Numero d'article", class: "block text-sm font-medium text-slate-700 mb-1" %>
+    <%= f.text_field :article_number, class: "w-full border border-slate-300 rounded px-3 py-2" %>
+  </div>
+
+  <div>
+    <%= f.label :name, "Désignation de l'article", class: "block text-sm font-medium text-slate-700 mb-1" %>
+    <%= f.text_field :name, class: "w-full border border-slate-300 rounded px-3 py-2" %>
+  </div>
+
+  <div class="grid grid-cols-2 gap-4">
+    <div>
+      <%= f.label :reference_price, "Prix unitaire inclus rabais", class: "block text-sm font-medium text-slate-700 mb-1" %>
+      <%= f.number_field :reference_price, step: 0.01, min: 0, class: "w-full border border-slate-300 rounded px-3 py-2" %>
+    </div>
+    <div>
+      <%= f.label :currency, "Unité monétaire", class: "block text-sm font-medium text-slate-700 mb-1" %>
+      <%= f.text_field :currency, class: "w-full border border-slate-300 rounded px-3 py-2" %>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 gap-4">
+    <div>
+      <%= f.label :last_order_quantity, "Quantité unitaire", class: "block text-sm font-medium text-slate-700 mb-1" %>
+      <%= f.number_field :last_order_quantity, step: 0.001, class: "w-full border border-slate-300 rounded px-3 py-2" %>
+    </div>
+    <div>
+      <%= f.label :unit, "Unité de la quantité (mètre, kg, etc.)", class: "block text-sm font-medium text-slate-700 mb-1" %>
+      <%= f.text_field :unit, class: "w-full border border-slate-300 rounded px-3 py-2" %>
+    </div>
+  </div>
+
+  <div>
+    <%= f.label :last_total, "Montant total article", class: "block text-sm font-medium text-slate-700 mb-1" %>
+    <%= f.number_field :last_total, step: 0.01, class: "w-full border border-slate-300 rounded px-3 py-2" %>
+  </div>
+
+  <div>
+    <%= f.label :delivery_address, "Adresse de livraison", class: "block text-sm font-medium text-slate-700 mb-1" %>
+    <%= f.text_field :delivery_address, class: "w-full border border-slate-300 rounded px-3 py-2" %>
+  </div>
+
+  <div>
+    <%= f.label :delivery_type, "Type de livraison", class: "block text-sm font-medium text-slate-700 mb-1" %>
+    <%= f.text_field :delivery_type, class: "w-full border border-slate-300 rounded px-3 py-2" %>
   </div>
 
   <div>
