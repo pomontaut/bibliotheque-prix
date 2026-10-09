@@ -1,6 +1,7 @@
 class InvoiceLine < ApplicationRecord
   belongs_to :invoice
   belongs_to :price_item, optional: true
+  belongs_to :supplier, optional: true
 
   validates :description, presence: true
 
@@ -15,10 +16,17 @@ class InvoiceLine < ApplicationRecord
     InvoiceParser.fee_article?(article_number)
   end
 
+  # The real seller for this specific line — a single invoice can bundle
+  # several orders under different points of sale, so this is not always
+  # the same as invoice.supplier.
+  def effective_supplier
+    supplier || invoice.supplier
+  end
+
   def reference_price
     return nil unless price_item
 
-    condition = invoice.supplier.active_condition_for(price_item, on: invoice.invoice_date || Date.current)
+    condition = effective_supplier.active_condition_for(price_item, on: invoice.invoice_date || Date.current)
     condition&.negotiated_price || price_item.reference_price
   end
 

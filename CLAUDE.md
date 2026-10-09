@@ -61,20 +61,60 @@ communique en français.
   rapport. Un appel `best_match(description)` sans `scope:` cherche par
   défaut dans tout `PriceItem` — ne jamais faire ça pour du rapprochement de
   facture.
-- **Point de vente ≠ fournisseur facturant** : HGC Handel AG réémet des
+- **Point de vente ≠ fournisseur facturant, PAR LIGNE** : HGC réémet des
   factures pour du matériel acheté directement chez un fabricant/distributeur
-  (Sika Schweiz AG, Mapei Suisse SA, swisspor Romandie SA, Ciments Vigier SA,
-  Knauf Insulation GmbH observés à ce jour — ~20% du corpus testé). La ligne
-  "Point de vente: X, adresse" du PDF indique le vrai vendeur.
-  `InvoiceParser.extract_header` capture `point_of_sale` ;
-  `InvoiceParser.effective_supplier_name` renvoie ce nom seulement s'il ne
-  contient pas "HGC" (sinon on garde HGC Handel AG). `Invoice#parse!`
-  réassigne alors automatiquement `invoice.supplier` (créant le `Supplier`
-  si besoin) **avant** de rapprocher/créer les articles, pour que
-  `PriceCondition`/`SupplierArticleMapping` soient rattachés au vrai
-  fournisseur. Comportement automatique et permanent (pas une consigne
-  ponctuelle) : s'applique à chaque nouvelle facture uploadée, y compris
-  celles à venir.
+  (Sika, Mapei, swisspor, Knauf, Canplast, Basys... observés à ce jour). La
+  ligne "Point de vente: X, adresse" du PDF indique le vrai vendeur.
+  **Erreur corrigée** : 90 des 186 factures réelles testées contiennent
+  PLUSIEURS sections "Point de vente" différentes dans un même document (ex:
+  une commande Mapei suivie d'une commande HGC) — attribuer tout le document
+  au premier point de vente trouvé attribuait à tort des articles HGC à
+  Mapei et inversement. `InvoiceParser.extract_lines` traque désormais le
+  point de vente *en vigueur à chaque ligne* en parcourant le texte
+  séquentiellement, et chaque `InvoiceLine` porte son propre `supplier_id`
+  (`InvoiceLine#effective_supplier` retombe sur `invoice.supplier` si nil).
+  **`Invoice#supplier` n'est plus jamais réassigné automatiquement** — il
+  reste ce qui a été choisi à l'upload ; c'est `InvoiceLine#supplier` qui
+  porte la vérité. Tout code qui rapproche/historise par fournisseur doit
+  utiliser `line.effective_supplier`, jamais `invoice.supplier`, sous peine
+  de reproduire cette contamination croisée.
+  `InvoiceParser.effective_supplier_name` renvoie le point de vente observé
+  sauf s'il correspond à HGC sous l'une de ses formes (`/\bHGC?\b/i` —
+  "HGC Handel AG", "HGC Commerce SA", "HG COMMERCIALE" observées).
+  Comportement automatique et permanent : s'applique à chaque facture
+  uploadée, y compris celles à venir.
+- **Prix net vs prix brut** : la ligne d'article affiche toujours le prix
+  BRUT, avant tout "Rabais"/"Supplément net"/"Frais" qui suit sur les lignes
+  de continuation du même bloc. Le prix réellement payé (ce qui doit
+  alimenter la bibliothèque) n'apparaît que sur la ligne "Montant hors TVA"
+  qui termine le bloc (1 nombre = total net seul, 2 nombres = prix unitaire
+  net puis total net). `InvoiceParser.net_amount_after` cherche cette ligne
+  dans les lignes suivant l'item (jusqu'à la prochaine ligne d'article ou
+  "Point de vente", ou 6 lignes au plus) et, si trouvée, remplace le
+  prix/total bruts de `extract_lines`. Sans ce fix, un rabais de 40% faisait
+  passer un prix net de 3.07 CHF/kg pour 1070 CHF (bug réel découvert et
+  corrigé — voir aussi le point suivant).
+- **Scan borné à 4 valeurs numériques** (quantité, prix, quantité de
+  référence "UP", montant) dans `parse_item_line` : au-delà, un repère isolé
+  dans la désignation (ex: "IBC 1000        1-     1'070 KG...", le "1-"
+  n'étant ni une quantité ni une unité) se faisait happer comme 5ᵉ valeur et
+  décalait quantité/prix d'une colonne — c'est ce qui causait le bug
+  ci-dessus en pratique. Sans borne, un article à 1070 KG et 5.12 CHF/kg
+  brut ressortait avec quantité=1000 et prix=1070.
+- **Virgule = séparateur de milliers, jamais décimal** : les deux lots de
+  factures réels utilisent le point comme séparateur décimal, que les
+  milliers soient groupés par apostrophe ("1'070") ou par virgule
+  ("1,070") — aucun des deux ne met jamais de virgule décimale.
+  `numeric_value` supprime donc toujours la virgule au lieu de parfois la
+  convertir en point ; l'ancienne heuristique lisait "1,070" comme 1.07.
+- **Une ligne d'article indentée reste une ligne d'article** : un modèle de
+  facture peut indenter uniformément toutes ses lignes, item compris — se
+  baser sur "commence par un espace" pour distinguer un item d'une
+  sous-ligne "Rabais" est donc faux. `parse_item_line` matche désormais sur
+  la ligne strippée ; la vraie garde anti-faux-positif est que la
+  désignation extraite doit contenir au moins une lettre (sinon c'est le
+  bloc de référence du bulletin de versement QR-facture suisse,
+  "27 47100 00000 10157 ...", qui matchait sinon le motif pos+article).
 - `SupplierArticleMapping` (`supplier_id + article_number` unique) :
   mémoire d'apprentissage. Dès qu'un humain confirme/corrige le rapprochement
   d'une ligne ayant un `article_number` (écran de contrôle →

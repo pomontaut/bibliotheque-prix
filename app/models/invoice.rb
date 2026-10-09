@@ -35,27 +35,34 @@ class Invoice < ApplicationRecord
 
     text = InvoiceParser.extract_text(file)
     header = InvoiceParser.extract_header(text)
-    real_supplier_name = InvoiceParser.effective_supplier_name(header[:point_of_sale])
-    effective_supplier = real_supplier_name.present? ? Supplier.find_or_create_by!(name: real_supplier_name) : supplier
     effective_number = invoice_number.presence || header[:invoice_number]
 
     if effective_number.present?
-      duplicate = Invoice.where(supplier: effective_supplier, invoice_number: effective_number).where.not(id: id).first
+      duplicate = Invoice.where(supplier: supplier, invoice_number: effective_number).where.not(id: id).first
       raise DuplicateError, duplicate if duplicate
     end
 
     update!(
       raw_text: text,
       invoice_number: effective_number,
-      invoice_date: invoice_date.presence || header[:invoice_date],
-      supplier: effective_supplier
+      invoice_date: invoice_date.presence || header[:invoice_date]
     )
 
     invoice_lines.destroy_all
     InvoiceParser.extract_lines(text).each do |parsed|
+      # Each line carries its OWN point-of-sale context — a single invoice
+      # can bundle several orders from different real sellers (90 of 186
+      # real invoices do). Never assume the whole invoice shares one
+      # supplier: resolve per line, falling back to the invoice's own
+      # supplier only when this line's point of sale is blank or is HGC
+      # itself under one of its several self-referential names.
+      real_supplier_name = InvoiceParser.effective_supplier_name(parsed[:point_of_sale])
+      line_supplier = real_supplier_name.present? ? Supplier.find_or_create_by!(name: real_supplier_name) : supplier
+
       is_fee = InvoiceParser.fee_article?(parsed[:article_number])
-      match = is_fee ? nil : find_match(parsed[:article_number], parsed[:description])
+      match = is_fee ? nil : find_match(line_supplier, parsed[:article_number], parsed[:description])
       invoice_lines.create!(
+        supplier: line_supplier,
         article_number: parsed[:article_number],
         description: parsed[:description],
         quantity: parsed[:quantity],
@@ -68,15 +75,16 @@ class Invoice < ApplicationRecord
     end
   end
 
-  def find_match(article_number, description)
-    mapping = supplier.supplier_article_mappings.find_by(article_number: article_number) if article_number.present?
+  def find_match(line_supplier, article_number, description)
+    mapping = line_supplier.supplier_article_mappings.find_by(article_number: article_number) if article_number.present?
     return mapping.price_item if mapping
 
-    # Scoped to this supplier's own items (by category, which is set to the
-    # supplier's name when an item is bootstrapped from an invoice line) —
-    # matching across all suppliers would merge different companies'
-    # similarly-worded but distinct products into the same PriceItem.
-    PriceItemMatcher.best_match(description, scope: PriceItem.where(category: supplier.name))
+    # Scoped to this line's own real supplier (by category, which is set to
+    # the supplier's name when an item is bootstrapped from an invoice
+    # line) — matching across all suppliers would merge different
+    # companies' similarly-worded but distinct products into the same
+    # PriceItem.
+    PriceItemMatcher.best_match(description, scope: PriceItem.where(category: line_supplier.name))
   end
 
   # Updates each matched article's reference price (and known unit/quantity/
@@ -92,7 +100,9 @@ class Invoice < ApplicationRecord
           reference_price: line.unit_price,
           unit: line.price_item.unit.presence || line.unit,
           article_number: line.price_item.article_number.presence || line.article_number,
-          last_order_quantity: line.quantity
+          last_order_quantity: line.quantity,
+          last_invoice_number: invoice_number,
+          last_invoice_date: invoice_date
         )
       end
       update!(status: "integrated")

@@ -7,7 +7,7 @@ class InvoiceLinesController < ApplicationController
       @invoice.update(status: "reviewed") if @invoice.status == "pending"
       if @invoice_line.price_item.present? && @invoice_line.article_number.present?
         SupplierArticleMapping.remember(
-          supplier: @invoice.supplier,
+          supplier: @invoice_line.effective_supplier,
           article_number: @invoice_line.article_number,
           price_item: @invoice_line.price_item
         )
@@ -30,17 +30,20 @@ class InvoiceLinesController < ApplicationController
       redirect_to @invoice, alert: "Cette ligne est un frais/taxe, pas un article." and return
     end
 
+    real_supplier = line.effective_supplier
     price_item = PriceItem.create!(
       name: line.description,
-      category: @invoice.supplier.name,
+      category: real_supplier.name,
       unit: line.unit,
       reference_price: [ line.unit_price || 0, 0 ].max,
       last_order_quantity: line.quantity,
       article_number: line.article_number,
-      notes: "Créé depuis la facture #{@invoice.invoice_number} (#{@invoice.supplier.name})"
+      last_invoice_number: @invoice.invoice_number,
+      last_invoice_date: @invoice.invoice_date,
+      notes: "Créé depuis la facture #{@invoice.invoice_number} (#{real_supplier.name})"
     )
     line.update!(price_item: price_item, matched_automatically: false)
-    SupplierArticleMapping.remember(supplier: @invoice.supplier, article_number: line.article_number, price_item: price_item) if line.article_number.present?
+    SupplierArticleMapping.remember(supplier: real_supplier, article_number: line.article_number, price_item: price_item) if line.article_number.present?
 
     redirect_to @invoice, notice: "Article « #{price_item.name} » créé et rapproché."
   end

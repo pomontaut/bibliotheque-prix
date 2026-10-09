@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_22_151542) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_23_062105) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -48,12 +48,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_151542) do
     t.integer "price_item_id"
     t.decimal "quantity", precision: 12, scale: 3
     t.decimal "ratio", precision: 8, scale: 4
+    t.integer "supplier_id"
     t.decimal "total", precision: 12, scale: 2
     t.string "unit"
     t.decimal "unit_price", precision: 12, scale: 2
     t.datetime "updated_at", null: false
     t.index ["invoice_id"], name: "index_invoice_lines_on_invoice_id"
     t.index ["price_item_id"], name: "index_invoice_lines_on_price_item_id"
+    t.index ["supplier_id"], name: "index_invoice_lines_on_supplier_id"
   end
 
   create_table "invoices", force: :cascade do |t|
@@ -95,6 +97,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_151542) do
     t.string "article_number"
     t.string "category"
     t.datetime "created_at", null: false
+    t.date "last_invoice_date"
+    t.string "last_invoice_number"
     t.decimal "last_order_quantity", precision: 12, scale: 3
     t.string "name", null: false
     t.text "notes"
@@ -129,6 +133,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_151542) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "invoice_lines", "invoices"
   add_foreign_key "invoice_lines", "price_items"
+  add_foreign_key "invoice_lines", "suppliers"
   add_foreign_key "invoices", "suppliers"
   add_foreign_key "price_conditions", "price_items"
   add_foreign_key "price_conditions", "suppliers"
