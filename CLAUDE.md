@@ -159,6 +159,21 @@ communique en français.
 - Le ratio (`InvoiceLine#ratio`) = prix facturé / prix de référence effectif
   (condition négociée active sinon `reference_price`). `anomalous?` flague
   un écart de plus de 10 % dans un sens ou l'autre (affiché en rouge).
+- **Lignes dupliquées au sein d'une même facture** : certaines factures HGC
+  impriment deux fois (parfois trois) le même bloc de commande sur une même
+  page — même "Point de vente", même n° d'article, même désignation, même
+  quantité, même prix unitaire ET même montant total — sous deux "N° de
+  commande" différents. C'est un artefact du document source (confirmé par
+  `PDF::Reader` : le texte brut de la page contient littéralement la chaîne
+  deux fois), pas deux commandes distinctes légitimes. `Invoice#parse!`
+  déduplique désormais les lignes extraites par
+  `(article_number, description, quantity, unit_price, total)` avant de
+  créer les `InvoiceLine` — comportement permanent, actif à chaque upload.
+  24 lignes historiques dupliquées sur cette base ont été nettoyées
+  (23 groupes, une facture en avait 3 copies) suite à une vérification
+  explicite demandée par l'utilisateur ; aucun autre type de "doublon"
+  (même n° d'article mais factures/désignations différentes dans le temps)
+  n'a été touché, car c'est l'historique de prix normal et attendu.
 - **Frais/taxes exclus de la bibliothèque** : chez HGC, les numéros d'article
   commençant par "2" (200000036 Frais de transport, 200000042 Taxe RPLP,
   200000038 Emballage, 200000323 Frais de transport usine...) sont des

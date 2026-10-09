@@ -49,7 +49,15 @@ class Invoice < ApplicationRecord
     )
 
     invoice_lines.destroy_all
-    InvoiceParser.extract_lines(text).each do |parsed|
+    # Some HGC invoices print the exact same order block twice under two
+    # different "N° de commande" on the same page (identical point of sale,
+    # article, designation, quantity, unit price AND total) — a document
+    # artifact, not two separate orders. Keep only one occurrence of each
+    # such exact duplicate within this invoice (permanent, every upload).
+    parsed_lines = InvoiceParser.extract_lines(text)
+                                 .uniq { |p| [p[:article_number], p[:description], p[:quantity], p[:unit_price], p[:total]] }
+
+    parsed_lines.each do |parsed|
       # Each line carries its OWN point-of-sale context — a single invoice
       # can bundle several orders from different real sellers (90 of 186
       # real invoices do). Never assume the whole invoice shares one
