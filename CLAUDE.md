@@ -122,6 +122,26 @@ communique en français.
   retenu ; toute future facture du même fournisseur avec ce même n°article
   est alors rapprochée avec certitude (`Invoice#find_match`), sans repasser
   par le matching flou. L'agent s'améliore donc facture après facture.
+  **`find_match` ne fait JAMAIS de rapprochement flou quand un
+  `article_number` est présent** — seul un `SupplierArticleMapping` exact
+  peut le résoudre ; sans mapping, la ligne reste non rapprochée. Avant ce
+  fix, des numéros d'article différents mais aux désignations proches
+  ("swissporXPS 300 GE" / "... GE gaufré" / "... SF lisse battues") se
+  faisaient fusionner dans le même `PriceItem`, corrompant son historique de
+  prix avec des produits sans rapport. Le matching flou ne sert plus que
+  pour les lignes **sans aucun** numéro d'article (ex: ~70% des lignes de
+  l'historique Gravières d'Epeisses). `PriceItem` a aussi
+  `has_many :supplier_article_mappings, dependent: :destroy` : supprimer un
+  article doit aussi oublier son mapping, sinon une future facture avec ce
+  même numéro le recréerait silencieusement.
+- La fiche article (`price_items/show`) affiche deux graphiques (Chart.js
+  via CDN, pas de bundler) quand l'article a au moins 2 points dans le
+  temps : prix facturé et quantité facturée, basés sur
+  `@chart_points` (date de facture + prix + quantité de chaque
+  `InvoiceLine` rapprochée). Sur la liste (`price_items/index`), un n°
+  d'article avec plus d'une version de prix est un `<details>` (menu
+  déroulant HTML natif, pas de JS) surligné en ambre, montrant un mini
+  historique et un lien vers le graphique complet (`#price-chart`).
 - Le ratio (`InvoiceLine#ratio`) = prix facturé / prix de référence effectif
   (condition négociée active sinon `reference_price`). `anomalous?` flague
   un écart de plus de 10 % dans un sens ou l'autre (affiché en rouge).

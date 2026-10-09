@@ -32,7 +32,32 @@
     <tbody class="divide-y divide-slate-100">
       <% @price_items.each do |item| %>
         <tr class="hover:bg-slate-50">
-          <td class="px-4 py-3 font-mono text-xs text-slate-500"><%= item.article_number %></td>
+          <td class="px-4 py-3 font-mono text-xs">
+            <% if item.article_number.present? %>
+              <% versions = item.price_item_versions.sort_by(&:changed_at).reverse %>
+              <% if versions.size > 1 %>
+                <details class="relative">
+                  <summary class="inline-block bg-amber-100 text-amber-900 px-2 py-0.5 rounded font-semibold cursor-pointer select-none list-none">
+                    <%= item.article_number %>
+                  </summary>
+                  <div class="absolute z-10 mt-1 bg-white border border-slate-200 rounded shadow-lg p-3 w-64 text-left normal-case">
+                    <div class="text-xs font-semibold text-slate-500 mb-2">Historique des prix</div>
+                    <ul class="space-y-1 mb-2">
+                      <% versions.first(5).each do |v| %>
+                        <li class="flex justify-between text-xs text-slate-700">
+                          <span><%= v.changed_at.strftime("%d.%m.%Y") %></span>
+                          <span class="font-mono"><%= number_to_currency(v.reference_price, unit: "CHF ", format: "%u %n") %></span>
+                        </li>
+                      <% end %>
+                    </ul>
+                    <%= link_to "Voir le graphique complet →", price_item_path(item, anchor: "price-chart"), class: "text-xs text-slate-800 font-semibold hover:underline" %>
+                  </div>
+                </details>
+              <% else %>
+                <span class="bg-amber-100 text-amber-900 px-2 py-0.5 rounded font-semibold"><%= item.article_number %></span>
+              <% end %>
+            <% end %>
+          </td>
           <td class="px-4 py-3 font-medium"><%= link_to item.name, item, class: "text-slate-800 hover:underline" %></td>
           <td class="px-4 py-3 text-slate-600"><%= item.category %></td>
           <td class="px-4 py-3 text-slate-600"><%= item.unit %></td>

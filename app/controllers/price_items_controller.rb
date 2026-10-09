@@ -6,10 +6,17 @@ class PriceItemsController < ApplicationController
   def index
     @categories = PriceItem.categories
     @price_items = PriceItem.search(params[:q]).in_category(params[:category]).order(:name)
+                            .includes(:price_item_versions)
   end
 
   def show
-    @invoice_lines = @price_item.invoice_lines.includes(invoice: :supplier).order(created_at: :desc).limit(20)
+    @invoice_lines = @price_item.invoice_lines.includes(invoice: :supplier).order(created_at: :desc).limit(50)
+    @chart_points = @price_item.invoice_lines
+                                .joins(:invoice)
+                                .where.not(invoices: { invoice_date: nil })
+                                .order("invoices.invoice_date")
+                                .pluck("invoices.invoice_date", :unit_price, :quantity, :article_number)
+                                .map { |date, price, qty, art| { date: date.to_s, price: price&.to_f, quantity: qty&.to_f, article_number: art } }
   end
 
   def new

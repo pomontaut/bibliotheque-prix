@@ -76,14 +76,23 @@ class Invoice < ApplicationRecord
   end
 
   def find_match(line_supplier, article_number, description)
-    mapping = line_supplier.supplier_article_mappings.find_by(article_number: article_number) if article_number.present?
-    return mapping.price_item if mapping
+    if article_number.present?
+      # A real article number is an exact identifier — only a known
+      # SupplierArticleMapping may resolve it. Never fall back to fuzzy
+      # text matching here: different article numbers with similarly-worded
+      # descriptions (e.g. "swissporXPS 300 GE" vs "swissporXPS 300 GE
+      # gaufré" vs "... SF lisse battues") were getting silently merged into
+      # one PriceItem, corrupting its price history with unrelated
+      # products. An unmapped article number returns nil — the line stays
+      # unmatched until a human confirms it (or it is bootstrapped once via
+      # the "Créer un article" action), which is what actually creates the
+      # mapping for next time.
+      return line_supplier.supplier_article_mappings.find_by(article_number: article_number)&.price_item
+    end
 
-    # Scoped to this line's own real supplier (by category, which is set to
-    # the supplier's name when an item is bootstrapped from an invoice
-    # line) — matching across all suppliers would merge different
-    # companies' similarly-worded but distinct products into the same
-    # PriceItem.
+    # No article number at all (e.g. the Gravières d'Epeisses historical
+    # import, which omits it on ~70% of rows) — fuzzy text matching, scoped
+    # to this line's own real supplier, is the only option left.
     PriceItemMatcher.best_match(description, scope: PriceItem.where(category: line_supplier.name))
   end
 

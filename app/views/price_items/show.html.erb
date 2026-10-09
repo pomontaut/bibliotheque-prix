@@ -11,7 +11,13 @@
 <div class="bg-white border border-slate-200 rounded shadow-sm p-6 max-w-xl mb-8">
   <dl class="grid grid-cols-2 gap-y-3 text-sm">
     <dt class="text-slate-500">N° article</dt>
-    <dd class="text-slate-800 font-mono"><%= @price_item.article_number.presence || "—" %></dd>
+    <dd class="text-slate-800">
+      <% if @price_item.article_number.present? %>
+        <span class="font-mono bg-amber-100 text-amber-900 px-2 py-0.5 rounded font-semibold"><%= @price_item.article_number %></span>
+      <% else %>
+        —
+      <% end %>
+    </dd>
 
     <dt class="text-slate-500">Catégorie</dt>
     <dd class="text-slate-800"><%= @price_item.category.presence || "—" %></dd>
@@ -29,6 +35,64 @@
     <dd class="text-slate-800"><%= simple_format(@price_item.notes.presence || "—") %></dd>
   </dl>
 </div>
+
+<% if @chart_points.size >= 2 %>
+  <h2 class="text-lg font-semibold text-slate-800 mb-3">Évolution dans le temps</h2>
+  <div class="grid md:grid-cols-2 gap-4 mb-8 max-w-4xl">
+    <div class="bg-white border border-slate-200 rounded shadow-sm p-4">
+      <div class="text-xs uppercase text-slate-500 mb-2">Prix facturé (CHF)</div>
+      <canvas id="price-chart" height="180"></canvas>
+    </div>
+    <div class="bg-white border border-slate-200 rounded shadow-sm p-4">
+      <div class="text-xs uppercase text-slate-500 mb-2">Quantité facturée</div>
+      <canvas id="quantity-chart" height="180"></canvas>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <script>
+    (function () {
+      var points = <%= raw @chart_points.to_json %>;
+      var labels = points.map(function (p) { return p.date; });
+
+      new Chart(document.getElementById("price-chart"), {
+        type: "line",
+        data: {
+          labels: labels,
+          datasets: [{
+            label: "Prix (CHF)",
+            data: points.map(function (p) { return p.price; }),
+            borderColor: "#1e293b",
+            backgroundColor: "rgba(30,41,59,0.08)",
+            tension: 0.15,
+            fill: true,
+            pointRadius: 3
+          }]
+        },
+        options: {
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+
+      new Chart(document.getElementById("quantity-chart"), {
+        type: "bar",
+        data: {
+          labels: labels,
+          datasets: [{
+            label: "Quantité",
+            data: points.map(function (p) { return p.quantity; }),
+            backgroundColor: "#94a3b8"
+          }]
+        },
+        options: {
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+    })();
+  </script>
+<% end %>
 
 <h2 class="text-lg font-semibold text-slate-800 mb-3">Historique des prix</h2>
 <div class="bg-white border border-slate-200 rounded shadow-sm overflow-hidden max-w-xl">

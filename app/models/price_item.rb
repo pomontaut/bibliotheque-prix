@@ -2,6 +2,10 @@ class PriceItem < ApplicationRecord
   has_many :price_item_versions, -> { order(changed_at: :desc) }, dependent: :destroy
   has_many :price_conditions, dependent: :destroy
   has_many :invoice_lines, dependent: :nullify
+  # Deleting an article must also forget its learned article-number mapping
+  # — otherwise a future invoice with that same article number would find
+  # the mapping and silently recreate the very article a human deleted.
+  has_many :supplier_article_mappings, dependent: :destroy
 
   validates :name, presence: true
   validates :reference_price, numericality: { greater_than_or_equal_to: 0 }
