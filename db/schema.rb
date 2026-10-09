@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_09_132244) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_09_140302) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -90,8 +90,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_132244) do
   create_table "price_item_versions", force: :cascade do |t|
     t.datetime "changed_at", null: false
     t.datetime "created_at", null: false
+    t.date "invoice_date"
     t.integer "price_item_id", null: false
+    t.decimal "quantity", precision: 12, scale: 3
     t.decimal "reference_price", precision: 12, scale: 2, null: false
+    t.decimal "total", precision: 12, scale: 2
     t.datetime "updated_at", null: false
     t.index ["price_item_id"], name: "index_price_item_versions_on_price_item_id"
   end

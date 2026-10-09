@@ -28,13 +28,26 @@ class PriceItem < ApplicationRecord
   private
 
   def record_price_change
+    # The price being archived here is the OLD one (reference_price_was) —
+    # so the invoice/quantity/total that go with it must be the OLD values
+    # too (the "_was" attributes), i.e. whatever was in effect while that
+    # price was the current one, not the values this very update is setting.
     price_item_versions.build(
       reference_price: reference_price_was,
-      changed_at: Time.current
+      changed_at: Time.current,
+      invoice_date: last_invoice_date_was,
+      quantity: last_order_quantity_was,
+      total: last_total_was
     )
   end
 
   def record_initial_price
-    price_item_versions.create!(reference_price: reference_price, changed_at: created_at)
+    price_item_versions.create!(
+      reference_price: reference_price,
+      changed_at: created_at,
+      invoice_date: last_invoice_date,
+      quantity: last_order_quantity,
+      total: last_total
+    )
   end
 end

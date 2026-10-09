@@ -119,11 +119,14 @@
 <% end %>
 
 <h2 class="text-lg font-semibold text-slate-800 mb-3">Historique des prix</h2>
-<div class="bg-white border border-slate-200 rounded shadow-sm overflow-hidden max-w-xl">
+<div class="bg-white border border-slate-200 rounded shadow-sm overflow-hidden max-w-3xl">
   <table class="w-full text-left text-sm">
     <thead class="bg-slate-100 text-slate-600 uppercase text-xs">
       <tr>
         <th class="px-4 py-2">Prix</th>
+        <th class="px-4 py-2">Date de facture</th>
+        <th class="px-4 py-2 text-right">Quantité</th>
+        <th class="px-4 py-2 text-right">Montant total</th>
         <th class="px-4 py-2">Effectif jusqu'au</th>
       </tr>
     </thead>
@@ -131,6 +134,9 @@
       <% @price_item.price_item_versions.each do |version| %>
         <tr>
           <td class="px-4 py-2 font-mono"><%= number_to_currency(version.reference_price, unit: "CHF ", format: "%u %n") %></td>
+          <td class="px-4 py-2 text-slate-600"><%= version.invoice_date&.strftime("%d.%m.%Y") || "—" %></td>
+          <td class="px-4 py-2 text-right font-mono text-slate-600"><%= version.quantity.presence || "—" %></td>
+          <td class="px-4 py-2 text-right font-mono text-slate-600"><%= version.total.present? ? number_to_currency(version.total, unit: "#{@price_item.currency} ", format: "%u %n") : "—" %></td>
           <td class="px-4 py-2 text-slate-500"><%= version.changed_at.strftime("%d.%m.%Y %H:%M") %></td>
         </tr>
       <% end %>

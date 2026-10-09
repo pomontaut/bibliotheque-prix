@@ -15,6 +15,11 @@
   <%= submit_tag "Filtrer", class: "bg-slate-200 text-slate-800 px-4 py-2 rounded hover:bg-slate-300" %>
 <% end %>
 
+<div class="flex items-center gap-2 mb-3 text-xs text-slate-500">
+  <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+  Article avec au moins 2 prix en historique (survoler le point ou cliquer le n° d'article pour le détail)
+</div>
+
 <div class="bg-white border border-slate-200 rounded shadow-sm overflow-x-auto">
   <table class="w-full text-left">
     <thead class="bg-slate-100 text-slate-600 text-xs uppercase">
@@ -34,14 +39,15 @@
     </thead>
     <tbody class="divide-y divide-slate-100">
       <% @price_items.each do |item| %>
-        <tr class="hover:bg-slate-50">
+        <% versions = item.price_item_versions.sort_by(&:changed_at).reverse %>
+        <% multi_price = versions.size > 1 %>
+        <tr class="<%= multi_price ? "bg-emerald-50 hover:bg-emerald-100" : "hover:bg-slate-50" %>">
           <td class="px-4 py-3 text-slate-500 text-sm whitespace-nowrap"><%= item.last_invoice_date&.strftime("%d.%m.%Y") %></td>
           <td class="px-4 py-3 font-mono text-xs text-slate-600"><%= item.last_invoice_number %></td>
           <td class="px-4 py-3 text-slate-600"><%= item.category %></td>
           <td class="px-4 py-3 text-slate-500 text-sm"><%= item.invoicing_supplier_name %></td>
           <td class="px-4 py-3 font-mono text-xs">
             <% if item.article_number.present? %>
-              <% versions = item.price_item_versions.sort_by(&:changed_at).reverse %>
               <% if versions.size > 1 %>
                 <details class="relative">
                   <summary class="inline-block bg-amber-100 text-amber-900 px-2 py-0.5 rounded font-semibold cursor-pointer select-none list-none">
@@ -65,7 +71,12 @@
               <% end %>
             <% end %>
           </td>
-          <td class="px-4 py-3 font-medium"><%= link_to item.name, item, class: "text-slate-800 hover:underline" %></td>
+          <td class="px-4 py-3 font-medium">
+            <% if multi_price %>
+              <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2 align-middle" title="<%= versions.size %> prix en historique"></span>
+            <% end %>
+            <%= link_to item.name, item, class: "text-slate-800 hover:underline align-middle" %>
+          </td>
           <td class="px-4 py-3 text-right font-mono"><%= number_to_currency(item.reference_price, unit: "#{item.currency} ", format: "%u %n") %></td>
           <td class="px-4 py-3 text-right font-mono text-slate-600"><%= item.last_order_quantity %></td>
           <td class="px-4 py-3 text-slate-600"><%= item.unit %></td>
