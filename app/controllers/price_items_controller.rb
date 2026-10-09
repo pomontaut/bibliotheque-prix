@@ -105,6 +105,18 @@ class PriceItemsController < ApplicationController
     "fournisseur_factureur" => :invoicing_supplier_name
   }.freeze
 
+  # Sniffs the column separator from the header line: French/Swiss Excel
+  # exports this spreadsheet format with ";" by default, but a file saved
+  # from another locale may use ",". Picking the wrong one makes CSV read
+  # an entire data line as a single field, which then raises "Illegal
+  # quoting" as soon as that field contains an embedded escaped quote.
+  def self.detect_col_sep(path)
+    first_line = File.open(path, "r:bom|utf-8", &:readline)
+    first_line.count(";") > first_line.count(",") ? ";" : ","
+  rescue EOFError
+    ","
+  end
+
   def import_upload
     file = params[:file]
     if file.blank?
@@ -116,7 +128,10 @@ class PriceItemsController < ApplicationController
     updated = 0
     errors = []
 
-    CSV.foreach(file.path, headers: true, header_converters: ->(h) { HEADER_MAP[self.class.normalize_header(h)] || h }) do |row|
+    col_sep = self.class.detect_col_sep(file.path)
+
+    CSV.foreach(file.path, headers: true, col_sep: col_sep, encoding: "bom|utf-8",
+                header_converters: ->(h) { HEADER_MAP[self.class.normalize_header(h)] || h }) do |row|
       name = row[:name].to_s.strip
       next if name.blank?
 
